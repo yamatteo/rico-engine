@@ -1,28 +1,79 @@
 import unittest
+
+
+from .actions import *
 from .boards import Board
+from .constants import BUILDINGS, GOODS, ROLES
+from .game import Game
 from .towns import Town
-from .constants import BUILDINGS, ROLES, GOODS
+from .utils import WorkplaceData
+
+
+class TestFixedGame4(unittest.TestCase):
+    def setUp(self):
+        self.game = Game.start(["Aaron", "Bard", "Carl", "Dave"], shuffle=False)
+    
+    def test_setup(self):
+        game, board = self.game, self.game.board
+        Aa, Ba, Ca, Da = board.towns.values()
+        assert Aa.name == "Aa"
+        assert game.play_order == ["Aa", "Ba", "Ca", "Da"]
+
+    def test_builder_role(self):
+        self.game.take_action(GovernorAction("Aa"))
+        self.game.take_action(RoleAction("Aa", role="builder"))
+        assert all( isinstance(action, BuilderAction) for action in self.game.actions[:4] )
+
+    def test_captain_role(self):
+        self.game.take_action(GovernorAction("Aa"))
+        self.game.board["Aa"].corn = 3
+        self.game.take_action(RoleAction("Aa", role="captain"))
+        assert all( isinstance(action, CaptainAction) for action in self.game.actions[:4] )
+
+    def test_craftsman_role(self):
+        self.game.take_action(GovernorAction("Aa"))
+        self.game.board["Aa"].tiles["corn_tile"] = WorkplaceData(2, 1)
+        self.game.take_action(RoleAction("Aa", role="craftsman"))
+        assert isinstance(self.game.actions[0], CraftsmanAction)
+
+    def test_mayor_role(self):
+        self.game.take_action(GovernorAction("Aa"))
+        self.game.take_action(RoleAction("Aa", role="mayor"))
+        assert all( isinstance(action, MayorAction) for action in self.game.actions[:4] )
+
+
+    def test_settler_role(self):
+        self.game.take_action(GovernorAction("Aa"))
+        self.game.take_action(RoleAction("Aa", role="settler"))
+        assert all( isinstance(action, SettlerAction) for action in self.game.actions[:4] )
+
+
+    def test_trader_role(self):
+        self.game.take_action(GovernorAction("Aa"))
+        self.game.take_action(RoleAction("Aa", role="trader"))
+        assert all( isinstance(action, TraderAction) for action in self.game.actions[:4] )
+
 
 class TestBoard3(unittest.TestCase):
 
     def setUp(self):
-        self.board = Board.new(['Alice', 'Bob', 'Charlie'])
+        self.board = Board.new("ABC")
     
     def test_new_board(self):
         self.assertEqual(len(self.board.towns), 3)
-        self.assertIn('Alice', self.board.towns)
-        self.assertIn('Bob', self.board.towns)
-        self.assertIn('Charlie', self.board.towns)
+        self.assertIn('A', self.board.towns)
+        self.assertIn('B', self.board.towns)
+        self.assertIn('C', self.board.towns)
         self.assertEqual(self.board.money, 48)
         self.assertEqual(self.board.people, 55)
     
     def test_give_tile(self):
-        alice = self.board['Alice']
+        town = self.board['A']
         tile = self.board.exposed_tiles[0]
-        prev = alice.tiles[tile].placed
+        prev = town.tiles[tile].placed
         self.assertLessEqual(prev, 1)
-        self.board.give_tile(tile, to=alice)
-        self.assertEqual(alice.tiles[tile].placed, prev+1)
+        self.board.give_tile(tile, to=town)
+        self.assertEqual(town.tiles[tile].placed, prev+1)
 
 class TestTown(unittest.TestCase):
 

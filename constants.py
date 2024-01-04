@@ -1,5 +1,19 @@
 from typing import Literal, Union, get_args
 
+ActionType = Literal[
+    "builder",
+    "captain",
+    "craftsman",
+    "governor",
+    "mayor",
+    "refuse",
+    "role",
+    "settler",
+    "storage",
+    "terminate",
+    "tidyup",
+    "trader",
+]
 Good = Literal[
     "coffee",
     "corn",
@@ -57,6 +71,7 @@ Tile = Literal[
 
 Building = Union[ProdBuilding, SmallBuilding, LargeBuilding]
 
+ACTIONS: tuple[ActionType, ...] = get_args(ActionType)
 GOODS: tuple[Good, ...] = get_args(Good)
 LARGE_BUILDINGS: tuple[LargeBuilding, ...] = get_args(LargeBuilding)
 PROD_BUILDINGS: tuple[ProdBuilding, ...] = get_args(ProdBuilding)

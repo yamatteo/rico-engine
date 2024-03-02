@@ -41,7 +41,7 @@ class Board(Holder):
     @classmethod
     def new(cls, names: Sequence[str], shuffle_tiles=True):
         assert 3 <= len(names) <= 5, "Players must be between 3 and 5."
-        
+
         game_data = {}
         game_data["towns"] = {name: Town(name=name) for name in names}
 
@@ -56,26 +56,32 @@ class Board(Holder):
 
         game_data["people_ship"] = len(names)
         game_data["market"] = []
-        game_data["goods_fleet"] = {n: ShipData(n, None, 0) for n in range(len(names) + 1, len(names) + 4)}
+        game_data["goods_fleet"] = {
+            n: ShipData(n, None, 0) for n in range(len(names) + 1, len(names) + 4)
+        }
 
         # Generate role cards
-        game_data["roles"] = {r:RoleData(i < len(names) + 3, 0) for i in range(8) for i, r in enumerate(ROLES)}
+        game_data["roles"] = {
+            r: RoleData(i < len(names) + 3, 0)
+            for i in range(8)
+            for i, r in enumerate(ROLES)
+        }
 
         # Generate tiles
         game_data["unsettled_quarries"] = 8
         game_data["unsettled_tiles"] = list()
-        game_data["exposed_tiles"] = list(sum(([tile]*amount for tile, amount in TILE_INFO.items()), start=[]))
+        game_data["exposed_tiles"] = list(
+            sum(([tile] * amount for tile, amount in TILE_INFO.items()), start=[])
+        )
         if shuffle_tiles:
             random.shuffle(game_data["exposed_tiles"])
 
         # Generate buildings
         game_data["unbuilt"] = {
-            building: info["initial"]
-            for building, info in BUILD_INFO.items()
+            building: info["initial"] for building, info in BUILD_INFO.items()
         }
 
         self = cls(**game_data)
-    
 
         # Distribute money
         amount = len(names) - 1
@@ -87,7 +93,9 @@ class Board(Holder):
         num_indigo = 2 if len(names) < 5 else 3
         for i, player_name in enumerate(names):
             player = self.towns[player_name]
-            self.give_tile(to=player, type="indigo_tile" if i < num_indigo else "corn_tile")
+            self.give_tile(
+                to=player, type="indigo_tile" if i < num_indigo else "corn_tile"
+            )
         self.expose_tiles()
 
         # # Take first action (governor assignment)
@@ -96,7 +104,7 @@ class Board(Holder):
 
     def asdict(self):
         d = dict()
-        
+
         for role, data in self.roles.items():
             d[f"{role} is available"] = data.available
 
@@ -108,34 +116,28 @@ class Board(Holder):
 
         for good in GOODS:
             bin_extend(d, good, getattr(self, good), sup=12)
-            
+
         bin_extend(d, f"covered tiles", len(self.unsettled_tiles), sup=63)
         bin_extend(d, f"quarries", self.unsettled_quarries, sup=7)
 
         for type in TILE_INFO:
             bin_extend(d, type, self.exposed_tiles.count(type), sup=6)
-        
+
         bin_extend(d, "people in ship", self.people_ship, sup=15)
 
         for ship in self.goods_fleet.values():
-            bin_extend(d, f"ship({ship.size}) space", ship.size-ship.amount, sup=7)
+            bin_extend(d, f"ship({ship.size}) space", ship.size - ship.amount, sup=7)
             for good in GOODS:
                 d[f"ship({ship.size}) has {good}"] = int(ship.type == good)
 
         bin_extend(d, f"market space", 4 - len(self.market), sup=4)
         for good in GOODS:
             d[f"market has {good}"] = int(good in self.market)
-        
-        for building, info in BUILD_INFO.items():
-            bin_extend(d, building, self.unbuilt[building], sup=info['initial'])
-        
-        return d
 
-    # def copy(self):
-    #     return deepcopy(self)
-    
-    # def count_unsettled_tiles(self):
-    #     return sum(self.unsettled_tiles.values())
+        for building, info in BUILD_INFO.items():
+            bin_extend(d, building, self.unbuilt[building], sup=info["initial"])
+
+        return d
 
     def empty_ships_and_market(self):
         for size, data in self.goods_fleet.items():
@@ -151,10 +153,10 @@ class Board(Holder):
 
     def expose_tiles(self):
         tiles = self.unsettled_tiles + self.exposed_tiles
-        
+
         self.exposed_tiles = tiles[: len(self.towns) + 1]
         self.unsettled_tiles = tiles[len(self.towns) + 1 :]
-        
+
     def give_building(self, building_type: Building, *, to: Union[Town, str]):
         if isinstance(to, str):
             town = self.towns[to]
@@ -168,9 +170,15 @@ class Board(Holder):
         builder_discount = 1 if town.role == "builder" else 0
         price = max(0, cost - quarries_discount - builder_discount)
         assert town.money >= price, f"Player does not have enough money."
-        assert self.unbuilt[building_type] > 0, f"There are no more {building_type} to sell."
-        assert town.count_free_build_space() >= (2 if tier == 4 else 1), f"Town of {town.name} does not have space for {building_type}"
-        assert town.buildings[building_type].placed == 0, f"Town of {town.name} already has a {building_type}"
+        assert (
+            self.unbuilt[building_type] > 0
+        ), f"There are no more {building_type} to sell."
+        assert town.count_free_build_space() >= (
+            2 if tier == 4 else 1
+        ), f"Town of {town.name} does not have space for {building_type}"
+        assert (
+            town.buildings[building_type].placed == 0
+        ), f"Town of {town.name} already has a {building_type}"
 
         self.unbuilt[building_type] -= 1
         town.buildings[building_type] = WorkplaceData(1, 0)
@@ -182,8 +190,8 @@ class Board(Holder):
         assert to.count_tiles() < 12, "No more space to place a tile."
 
         type = self.unsettled_tiles.pop(0)
-        placed, worked = to.tiles[type] 
-        to.tiles[type] = WorkplaceData(placed+1, worked)
+        placed, worked = to.tiles[type]
+        to.tiles[type] = WorkplaceData(placed + 1, worked)
 
     def give_tile(self, type: Tile, *, to: Town):
         if type == "quarry_tile":
@@ -195,15 +203,15 @@ class Board(Holder):
             assert to.count_tiles() < 12, "No more space to place a quarry."
 
             self.exposed_tiles.remove(type)
-            placed, worked = to.tiles[type] 
-            to.tiles[type] = WorkplaceData(placed+1, worked)
+            placed, worked = to.tiles[type]
+            to.tiles[type] = WorkplaceData(placed + 1, worked)
 
     def give_quarry(self, to: Town):
         assert self.unsettled_quarries > 0, "No more quarry to give."
         assert to.count_tiles() < 12, "No more space to place a quarry."
         self.unsettled_quarries -= 1
-        placed, worked = to.tiles["quarry_tile"] 
-        to.tiles["quarry_tile"] = WorkplaceData(placed+1, worked)
+        placed, worked = to.tiles["quarry_tile"]
+        to.tiles["quarry_tile"] = WorkplaceData(placed + 1, worked)
 
     def give_role(self, role: Role, *, to: Union[str, Town]):
         if isinstance(to, str):
@@ -232,6 +240,10 @@ class Board(Holder):
     def is_end_of_round(self):
         return all((town.role is not None) for town in self.towns.values())
 
+    def load_cargo(self, amount: int, type: Good, size: int):
+        _, _, prev_amount = self.goods_fleet[size]
+        self.goods_fleet[size] = ShipData(size, type, prev_amount + amount)
+
     def next_to(self, name: str) -> str:
         cycle = itertools.cycle(self.towns)
         for owner in cycle:
@@ -244,16 +256,16 @@ class Board(Holder):
             if data.available:
                 assert self.money > 0, "Error! No more money for roles!"
                 self.money -= 1
-                self.roles[role] = RoleData(True, data.money+1)
+                self.roles[role] = RoleData(True, data.money + 1)
             else:
                 self.roles[role] = RoleData(True, 0)
-    
+
         # Set town roles to None
         for town in self.towns.values():
             town.role = None
             town.spent_wharf = False
             town.spent_captain = False
-            
+
     def round_from(self, wrt: str) -> Iterator[str]:
         cycle = itertools.cycle(self.towns)
 
@@ -271,9 +283,12 @@ class Board(Holder):
 
     def set_governor(self, name: str):
         for owner, town in self.towns.items():
-            town.gov = (owner == name)
+            town.gov = owner == name
 
     def ship_accept(self, ship_size, good) -> bool:
+        for size, data in self.goods_fleet.items():
+            if size != ship_size and data.type == good:
+                return False
         if self.goods_fleet[ship_size].amount == 0:
             return True
         elif self.goods_fleet[ship_size].type != good:

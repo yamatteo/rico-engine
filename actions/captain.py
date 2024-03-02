@@ -66,9 +66,10 @@ class CaptainAction(Action):
         else:
             assert board.ship_accept(ship_size=ship_size, good=good), f"Ship {ship_size} cannot accept {good}."
 
-            size, type, amount = board.goods_fleet[ship_size]
-            given_amount = min(size - amount, town.count(good))
-            board.goods_fleet[ship_size] = ShipData(size, type, amount+town.pop(good, given_amount))
+            _, _, amount = board.goods_fleet[ship_size]
+            given_amount = min(ship_size - amount, town.count(good))
+
+            board.load_cargo(town.pop(good, given_amount), good, ship_size)
 
             points = given_amount
             if town.privilege("harbor"):

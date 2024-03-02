@@ -42,6 +42,7 @@ class RoleAction(Action):
 
         assert role is not None, f"{action!r} is not complete."
         assert town.role is None, f"Player {town.name} already has role ({town.role})."
+        
 
         board.give_role(role, to=town)
         extra: Sequence[Action] = []

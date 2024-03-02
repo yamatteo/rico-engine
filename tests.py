@@ -52,6 +52,11 @@ class TestFixedGame4(unittest.TestCase):
         self.game.take_action(GovernorAction("Aa"))
         self.game.take_action(RoleAction("Aa", role="trader"))
         assert all( isinstance(action, TraderAction) for action in self.game.actions[:4] )
+    
+    def test_no_second_prospector(self):
+        self.game.take_action(GovernorAction("Aa"))
+        with self.assertRaises(AssertionError):
+            self.game.take_action(RoleAction("Aa", role="second_prospector"))
 
 
 class TestBoard3(unittest.TestCase):

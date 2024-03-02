@@ -222,20 +222,12 @@ class Board(Holder):
         assert town.role is None, f"Player {to} already as role {town.role}."
         assert role in ROLES, f"Role {role} is not available."
 
-        # i = ROLES.index(role)
         assert role in self.roles, f"Role {role} is not available."
-        # available_roles = [role for role, amount in zip(ROLES, self.roles) if amount > -1]
-        # role_type = role.type if isinstance(role, Role) else role
-        # enforce(role_type in available_roles, f"Role {role_type} is not available.")
-        # i = available_roles.index(role_type)
+        assert self.roles[role].available, f"Role {role} is not available."
 
-        # town.add("money", self.roles[i])
         town.role = role
         town.money += self.roles[role].money
-        # self.roles[i] = -1
         self.roles[role] = RoleData(False, 0)
-        # self.roles[i].give("all", "money", to=town)
-        # town.role = self.roles.pop(i)
 
     def is_end_of_round(self):
         return all((town.role is not None) for town in self.towns.values())
@@ -252,13 +244,13 @@ class Board(Holder):
         return next(cycle)
 
     def reset_roles(self):
-        for role, data in self.roles.items():
+        for i, (role, data) in enumerate(self.roles.items()):
             if data.available:
                 assert self.money > 0, "Error! No more money for roles!"
                 self.money -= 1
                 self.roles[role] = RoleData(True, data.money + 1)
             else:
-                self.roles[role] = RoleData(True, 0)
+                self.roles[role] = RoleData(i < len(self.towns) + 3, 0)
 
         # Set town roles to None
         for town in self.towns.values():

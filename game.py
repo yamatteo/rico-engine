@@ -3,11 +3,37 @@ import random
 from typing import Sequence
 
 from attr import define
+from cattrs.preconf.json import make_converter
 
 from .pseudos import generate_pseudos
-from .actions import Action, GovernorAction
+from .actions import *
 from .boards import Board
 
+
+def custom_action_structure(data, cls) -> Action:
+    if data.get("type") == "builder":
+        return BuilderAction(**data)
+    elif data.get("type") == "captain":
+        return CaptainAction(**data)
+    elif data.get("type") == "governor":
+        return GovernorAction(**data)
+    elif data.get("type") == "role":
+        return RoleAction(**data)
+    elif data.get("type") == "terminate":
+        return TerminateAction(**data)
+    elif data.get("type") == "craftsman":
+        return CraftsmanAction(**data)
+    elif data.get("type") == "mayor":
+        return MayorAction(**data)
+    elif data.get("type") == "settler":
+        return SettlerAction(**data)
+    elif data.get("type") == "trader":
+        return TraderAction(**data)
+    else:
+        raise ValueError(f"Invalid action type: {data.get('type')}")
+
+game_converter = make_converter()
+game_converter.register_structure_hook(Action, custom_action_structure)
 
 @define
 class Game:
@@ -19,6 +45,11 @@ class Game:
     @property
     def expected(self) -> Action:
         return self.actions[0]
+    
+    @classmethod
+    def loads(cls, data: str) -> "Game":
+        return game_converter.loads(data, cls)
+        # return cattrs.structure(json.loads(data), cls)
 
     @classmethod
     def start(cls, usernames: Sequence[str], shuffle=True):
@@ -44,6 +75,10 @@ class Game:
             board=deepcopy(self.board),
             pseudos=self.pseudos,
         )
+    
+    def dumps(self) -> str:
+        return game_converter.dumps(self)
+        # return json.dumps(cattrs.unstructure(self))
 
 
     def drop_and_merge(self, extra: Sequence[Action]):

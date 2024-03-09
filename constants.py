@@ -69,7 +69,32 @@ Tile = Literal[
     "tobacco_tile",
 ]
 
-Building = Union[ProdBuilding, SmallBuilding, LargeBuilding]
+# Building = Union[ProdBuilding, SmallBuilding, LargeBuilding]
+Building = Literal[
+    "city_hall",
+    "custom_house",
+    "fortress",
+    "guild_hall",
+    "residence",
+    "coffee_roaster",
+    "indigo_plant",
+    "small_indigo_plant",
+    "small_sugar_mill",
+    "sugar_mill",
+    "tobacco_storage",
+    "construction_hut",
+    "factory",
+    "hacienda",
+    "harbor",
+    "hospice",
+    "large_market",
+    "large_warehouse",
+    "office",
+    "small_market",
+    "small_warehouse",
+    "university",
+    "wharf",
+]
 
 ACTIONS: tuple[ActionType, ...] = get_args(ActionType)
 GOODS: tuple[Good, ...] = get_args(Good)

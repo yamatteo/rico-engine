@@ -18,6 +18,12 @@ class TestFixedGame4(unittest.TestCase):
         Aa, Ba, Ca, Da = board.towns.values()
         assert Aa.name == "Aa"
         assert game.play_order == ["Aa", "Ba", "Ca", "Da"]
+    
+    def test_serialization(self):
+        data = self.game.dumps()
+        self.assertIsInstance(data, str)
+        reconstructed_game = Game.loads(data)
+        self.assertEqual(self.game, reconstructed_game)
 
     def test_builder_role(self):
         self.game.take_action(GovernorAction("Aa"))

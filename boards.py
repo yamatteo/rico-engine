@@ -141,14 +141,13 @@ class Board(Holder):
 
     def empty_ships_and_market(self):
         for size, data in self.goods_fleet.items():
-            _, type, amount = data
-            if amount >= size:
+            if data.type and data.amount >= size:
                 self.goods_fleet[size] = ShipData(size, None, 0)
-                self.add(type, amount)
+                self.add(data.type, data.amount)
         market_total = len(self.market)
         if market_total >= 4:
-            for type in self.market:
-                self.add(type, 1)
+            for data.type in self.market:
+                self.add(data.type, 1)
             self.market = []
 
     def expose_tiles(self):
@@ -228,12 +227,17 @@ class Board(Holder):
         town.role = role
         town.money += self.roles[role].money
         self.roles[role] = RoleData(False, 0)
+    
+    def get_governor_name(self):
+        for name, town in self.towns.items():
+            if town.gov:
+                return name
 
     def is_end_of_round(self):
         return all((town.role is not None) for town in self.towns.values())
 
     def load_cargo(self, amount: int, type: Good, size: int):
-        _, _, prev_amount = self.goods_fleet[size]
+        prev_amount = self.goods_fleet[size].amount
         self.goods_fleet[size] = ShipData(size, type, prev_amount + amount)
 
     def next_to(self, name: str) -> str:

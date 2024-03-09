@@ -18,6 +18,7 @@ class TestFixedGame4(unittest.TestCase):
         Aa, Ba, Ca, Da = board.towns.values()
         assert Aa.name == "Aa"
         assert game.play_order == ["Aa", "Ba", "Ca", "Da"]
+        self.assertEqual(list(game.current_round()), list(game.board.towns.values()))
     
     def test_serialization(self):
         data = self.game.dumps()

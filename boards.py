@@ -1,7 +1,7 @@
 import itertools
 import random
 from copy import deepcopy
-from typing import Iterator, Sequence, Union
+from typing import Iterator, Optional, Sequence, Union
 
 from attr import define
 
@@ -228,7 +228,7 @@ class Board(Holder):
         town.money += self.roles[role].money
         self.roles[role] = RoleData(False, 0)
     
-    def get_governor_name(self):
+    def get_governor_name(self) -> Optional[str]:
         for name, town in self.towns.items():
             if town.gov:
                 return name

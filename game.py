@@ -106,3 +106,7 @@ class Game:
         assert action.responds_to(self.expected)
         self.board, extra = action.react(self.board)
         self.drop_and_merge(extra)
+    
+    def current_round(self):
+        wrt = self.board.get_governor_name() or self.expected.name
+        return self.board.town_round_from(wrt)

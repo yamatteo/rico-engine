@@ -105,7 +105,7 @@ class Game:
         return game
 
     def take_action(self, action: Action):
-        assert action.responds_to(self.expected)
+        assert action.responds_to(self.expected), f"Action {action} doesn't respond to {self.expected}."
         self.board, extra = action.react(self.board)
         self.past_actions.append(action)
         self.drop_and_merge(extra)

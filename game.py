@@ -39,6 +39,7 @@ game_converter.register_structure_hook(Action, custom_action_structure)
 class Game:
     play_order: list[str]
     actions: Sequence[Action]
+    past_actions: list[Action]
     board: Board
     pseudos: dict[str, str]
 
@@ -60,7 +61,7 @@ class Game:
             random.shuffle(play_order)
         board = Board.new(play_order, shuffle_tiles=shuffle)
         actions = [GovernorAction(name=play_order[0])]
-        return cls(play_order=play_order, actions=actions, board=board, pseudos=pseudos)
+        return cls(play_order=play_order, actions=actions, board=board, pseudos=pseudos, past_actions=[])
     
     def astuple(self, wrt: str):
         output_tuple = tuple(self.board.asdict().values())
@@ -74,6 +75,7 @@ class Game:
             actions=deepcopy(self.actions),
             board=deepcopy(self.board),
             pseudos=self.pseudos,
+            past_actions=deepcopy(self.past_actions)
         )
     
     def dumps(self) -> str:
@@ -105,6 +107,7 @@ class Game:
     def take_action(self, action: Action):
         assert action.responds_to(self.expected)
         self.board, extra = action.react(self.board)
+        self.past_actions.append(action)
         self.drop_and_merge(extra)
     
     def current_round(self):

@@ -62,7 +62,7 @@ class Board(Holder):
 
         # Generate role cards
         game_data["roles"] = {
-            r: RoleData(i < len(names) + 3, 0)
+            r: RoleData(int(i < len(names) + 3), 0)
             for i in range(8)
             for i, r in enumerate(ROLES)
         }

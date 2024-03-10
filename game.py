@@ -11,14 +11,16 @@ from .boards import Board
 
 
 def custom_action_structure(data, cls) -> Action:
-    if data.get("type") == "builder":
-        return BuilderAction(**data)
-    elif data.get("type") == "captain":
-        return CaptainAction(**data)
-    elif data.get("type") == "governor":
+    if data.get("type") == "governor":
         return GovernorAction(**data)
     elif data.get("type") == "role":
         return RoleAction(**data)
+    elif data.get("type") == "refuse":
+        return RefuseAction(**data)
+    elif data.get("type") == "builder":
+        return BuilderAction(**data)
+    elif data.get("type") == "captain":
+        return CaptainAction(**data)
     elif data.get("type") == "terminate":
         return TerminateAction(**data)
     elif data.get("type") == "craftsman":

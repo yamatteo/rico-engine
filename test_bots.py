@@ -1,11 +1,11 @@
 from rich import print
 
-from .actions.terminate import GameOver
+from .actions import GameOver
 from .bots.rufus import Rufus
 from .game import Game
 
 
-def test_mixed(bots):
+def manual_test_mixed(bots):
     usernames = list(bots.keys())
     game = Game.start(usernames)
     while True:
@@ -30,6 +30,6 @@ if __name__ == "__main__":
         "Ca": Rufus("Ca"),
         "Da": Rufus("Da"),
     }
-    test_mixed(bots)
+    manual_test_mixed(bots)
 
 

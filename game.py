@@ -31,6 +31,10 @@ def custom_action_structure(data, cls) -> Action:
         return SettlerAction(**data)
     elif data.get("type") == "trader":
         return TraderAction(**data)
+    elif data.get("type") == "tidyup":
+        return TidyUpAction(**data)
+    elif data.get("type") == "storage":
+        return StorageAction(**data)
     else:
         raise ValueError(f"Invalid action type: {data.get('type')}")
 

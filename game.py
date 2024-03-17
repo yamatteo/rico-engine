@@ -2,7 +2,7 @@ from copy import deepcopy
 import random
 from typing import Sequence
 
-from attr import define
+from attr import define, asdict
 from cattrs.preconf.json import make_converter
 
 from .pseudos import generate_pseudos
@@ -38,7 +38,11 @@ def custom_action_structure(data, cls) -> Action:
     else:
         raise ValueError(f"Invalid action type: {data.get('type')}")
 
+def custom_action_unstructure(action: Action) -> dict:
+    return asdict(action)
+
 game_converter = make_converter()
+game_converter.register_unstructure_hook(Action, custom_action_unstructure)
 game_converter.register_structure_hook(Action, custom_action_structure)
 
 @define

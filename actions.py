@@ -710,7 +710,7 @@ class SettlerAction(Action):
             "hospice"
         ), "Can't take extra person without occupied hospice."
         assert (
-            action.tile != "quarry"
+            action.tile != "quarry_tile"
             or town.role == "settler"
             or town.privilege("construction_hut")
         ), "Only the settler can pick a quarry"

@@ -3,47 +3,66 @@ import random
 from typing import Sequence
 
 from attr import define, asdict
+import cattrs
 from cattrs.preconf.json import make_converter
+
+from .constants import ACTIONS
 
 from .pseudos import generate_pseudos
 from .actions import *
 from .boards import Board
 
 
+game_base_converter = make_converter()
+game_converter = make_converter()
+
 def custom_action_structure(data, cls) -> Action:
-    if data.get("type") == "governor":
-        return GovernorAction(**data)
-    elif data.get("type") == "role":
-        return RoleAction(**data)
-    elif data.get("type") == "refuse":
-        return RefuseAction(**data)
-    elif data.get("type") == "builder":
-        return BuilderAction(**data)
-    elif data.get("type") == "captain":
-        return CaptainAction(**data)
-    elif data.get("type") == "terminate":
-        return TerminateAction(**data)
-    elif data.get("type") == "craftsman":
-        return CraftsmanAction(**data)
-    elif data.get("type") == "mayor":
-        return MayorAction(**data)
-    elif data.get("type") == "settler":
-        return SettlerAction(**data)
-    elif data.get("type") == "trader":
-        return TraderAction(**data)
-    elif data.get("type") == "tidyup":
-        return TidyUpAction(**data)
-    elif data.get("type") == "storage":
-        return StorageAction(**data)
+    _type: str = data.get("type", "None")
+    if _type in ACTIONS:
+        _class = eval(f"{_type.capitalize()}Action")
+        return game_base_converter.structure(data, _class)
     else:
-        raise ValueError(f"Invalid action type: {data.get('type')}")
+        raise ValueError(f"Invalid action type: {_type}")
+    # if data.get("type") == "governor":
+    #     return GovernorAction(**data)
+    # elif data.get("type") == "role":
+    #     return RoleAction(**data)
+    # elif data.get("type") == "refuse":
+    #     return RefuseAction(**data)
+    # elif data.get("type") == "builder":
+    #     return BuilderAction(**data)
+    # elif data.get("type") == "captain":
+    #     return cattrs.structure(data, CaptainAction)
+    # elif data.get("type") == "terminate":
+    #     return TerminateAction(**data)
+    # elif data.get("type") == "craftsman":
+    #     return CraftsmanAction(**data)
+    # elif data.get("type") == "mayor":
+    #     return MayorAction(**data)
+    # elif data.get("type") == "settler":
+    #     return SettlerAction(**data)
+    # elif data.get("type") == "trader":
+    #     return TraderAction(**data)
+    # elif data.get("type") == "tidyup":
+    #     return TidyupAction(**data)
+    # elif data.get("type") == "storage":
+    #     return StorageAction(**data)
+    # else:
+    #     raise ValueError(f"Invalid action type: {data.get('type')}")
+
+def custom_distribution_structure(data, cls) -> PeopleDistribution:
+    return list(data)
 
 def custom_action_unstructure(action: Action) -> dict:
     return asdict(action)
 
-game_converter = make_converter()
+def custom_distribution_unstructure(distribution: PeopleDistribution) -> list:
+    return distribution
+
 game_converter.register_unstructure_hook(Action, custom_action_unstructure)
 game_converter.register_structure_hook(Action, custom_action_structure)
+game_base_converter.register_unstructure_hook(PeopleDistribution, custom_distribution_unstructure)
+game_base_converter.register_structure_hook(PeopleDistribution, custom_distribution_structure)
 
 @define
 class Game:

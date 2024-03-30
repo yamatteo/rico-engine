@@ -24,7 +24,10 @@ from . import (
 
 PeopleHolder = Union[Literal["home"], Tile, Building]
 PeopleAssignment = tuple[PeopleHolder, int]
-PeopleDistribution = list[PeopleAssignment]
+# PeopleDistribution = list[PeopleAssignment]
+
+class PeopleDistribution(list[PeopleAssignment]):
+    pass
 
 
 class GameOver(Exception):
@@ -110,7 +113,7 @@ class RoleAction(Action):
         if role == "settler":
             extra = [
                 SettlerAction(name=name) for name in board.round_from(town.name)
-            ] + [TidyUpAction(name=action.name)]
+            ] + [TidyupAction(name=action.name)]
         elif role == "mayor":
             if board.has("people"):
                 board.give(1, "people", to=town)
@@ -123,7 +126,7 @@ class RoleAction(Action):
                         break
 
             extra.extend(MayorAction(name=name) for name in board.round_from(town.name))
-            extra.append(TidyUpAction(name=action.name))
+            extra.append(TidyupAction(name=action.name))
 
         elif role == "builder":
             extra = [BuilderAction(name=name) for name in board.round_from(town.name)]
@@ -136,12 +139,12 @@ class RoleAction(Action):
         elif role == "trader":
             extra = [
                 TraderAction(name=name) for name in board.round_from(town.name)
-            ] + [TidyUpAction(name=action.name)]
+            ] + [TidyupAction(name=action.name)]
         elif role == "captain":
             extra = (
                 [CaptainAction(name=name) for name in board.round_from(town.name)]
                 + [StorageAction(name=name) for name in board.round_from(town.name)]
-                + [TidyUpAction(name=action.name)]
+                + [TidyupAction(name=action.name)]
             )
         elif role in ["prospector1", "prospector2"]:
             if board.has("money"):
@@ -178,7 +181,7 @@ class BuilderAction(Action):
 
     def can_take_extra_person(self, board):
         town = board.towns[self.name]
-        return town.privilege("hospice") and board.people > 0
+        return town.privilege("university") and board.people > 0
 
     def get_available_buildings(self, board):
         town = board.towns[self.name]
@@ -221,7 +224,7 @@ class BuilderAction(Action):
         board.give_building(action.building_type, to=town)
         if action.extra_person:
             assert (
-                town.privilege("hospice") and board.people > 0
+                town.privilege("university") and board.people > 0
             ), "Can't ask for extra worker"
             board.people -= 1
             town.buildings[action.building_type] = WorkplaceData(1, 1)
@@ -259,7 +262,7 @@ class RefuseAction(Action):
             "captain",
             "craftsman",
             "settler",
-            "storage",
+            # "storage",
             "trader",
         ]
         return refusal_type and exact_name
@@ -507,11 +510,11 @@ class StorageAction(Action):
             actions = self.possibilities_with_one_warehouses(board)
         else:
             actions = self.possibilities_with_no_warehouse(board)
-        return [RefuseAction(name=town.name)] + actions
+        return [StorageAction(name=town.name)] + actions
 
 
 @define
-class TidyUpAction(Action):
+class TidyupAction(Action):
     type: Literal["tidyup"] = "tidyup"
     priority: int = 3
 
@@ -650,7 +653,7 @@ class MayorAction(Action):
                 (
                     people - space
                     if key == "home"
-                    else (1 if key in TILES else BUILD_INFO[key]["space"])  # type: ignore
+                    else (town.tiles[key].placed if key in TILES else BUILD_INFO[key]["space"])  # type: ignore
                 )
                 for key in holders
             )
@@ -662,7 +665,7 @@ class MayorAction(Action):
             ]
         else:
             dist = tuple(
-                0 if key == "home" else (1 if key in TILES else BUILD_INFO[key]["space"])  # type: ignore
+                0 if key == "home" else (town.tiles[key].placed if key in TILES else BUILD_INFO[key]["space"])  # type: ignore
                 for key in holders
             )
             distributions = {dist}
@@ -678,7 +681,7 @@ class MayorAction(Action):
 
             total_people_in_new_dist -= 1
             if cap and cap < len(new_distributions):
-                distributions = random.sample(new_distributions, cap)
+                distributions = random.sample(sorted(new_distributions), cap)
             else:
                 distributions = new_distributions
 

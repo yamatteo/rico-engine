@@ -14,6 +14,7 @@ ActionType = Literal[
     "tidyup",
     "trader",
 ]
+
 Good = Literal[
     "coffee",
     "corn",
@@ -96,7 +97,20 @@ Building = Literal[
     "wharf",
 ]
 
-ACTIONS: tuple[ActionType, ...] = get_args(ActionType)
+ACTIONS: tuple[ActionType, ...] = (
+    "builder",
+    "captain",
+    "craftsman",
+    "governor",
+    "mayor",
+    "refuse",
+    "role",
+    "settler",
+    "storage",
+    "terminate",
+    "tidyup",
+    "trader",
+)
 GOODS: tuple[Good, ...] = get_args(Good)
 LARGE_BUILDINGS: tuple[LargeBuilding, ...] = get_args(LargeBuilding)
 PROD_BUILDINGS: tuple[ProdBuilding, ...] = get_args(ProdBuilding)

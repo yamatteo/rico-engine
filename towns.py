@@ -232,10 +232,11 @@ class Town(Holder):
             return [BUILD_INFO[t]["tier"] for t in types]
 
     def list_tiles(self) -> list[Tile]:
-        l = []
-        for tile, data in self.tiles.items():
-            l.extend([tile] * data.placed)
-        return l
+        return [ tile for tile, data in self.tiles.items() if data.placed > 0 ]
+        # l = []
+        # for tile, data in self.tiles.items():
+        #     l.extend([tile] * data.placed)
+        # return l
 
     # @property
     # def role(self) -> Optional[Role]:

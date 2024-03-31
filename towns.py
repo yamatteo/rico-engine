@@ -51,20 +51,20 @@ class Town(Holder):
         for r in ROLES:
             data[r] = int(self.role == r)
 
-        for tile, data in self.tiles.items():
-            bin_extend(data, f"placed {tile}", data.placed, sup=12)
-            bin_extend(data, f"worked {tile}", data.placed, sup=12)
+        for tile, info in self.tiles.items():
+            bin_extend(data, f"placed {tile}", info.placed, sup=12)
+            bin_extend(data, f"worked {tile}", info.placed, sup=12)
 
         for building in PROD_BUILDINGS:
-            data = self.buildings[building]
-            data[f"{building} placed"] = data.placed
-            data[f"{building} worked %% 1"] = bin_mod(data.worked, 0)
-            data[f"{building} worked %% 2"] = bin_mod(data.worked, 1)
+            info = self.buildings[building]
+            data[f"{building} placed"] = info.placed
+            data[f"{building} worked %% 1"] = bin_mod(info.worked, 0)
+            data[f"{building} worked %% 2"] = bin_mod(info.worked, 1)
 
         for building in NONPROD_BUILDINGS:
-            data = self.buildings[building]
-            data[f"{building} placed"] = data.placed
-            data[f"{building} worked"] = data.worked
+            info = self.buildings[building]
+            data[f"{building} placed"] = info.placed
+            data[f"{building} worked"] = info.worked
 
         return data
 

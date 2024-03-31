@@ -1,6 +1,5 @@
 import itertools
 import random
-from copy import deepcopy
 from typing import Iterator, Optional, Sequence, Union
 
 from attr import define
@@ -34,6 +33,8 @@ class Board(Holder):
     unsettled_quarries: int
     exposed_tiles: list[Tile]
     unsettled_tiles: list[Tile]
+
+    endgame_reason: Optional[str] = None
 
     def __getitem__(self, name: str):
         return self.towns[name]
@@ -97,47 +98,45 @@ class Board(Holder):
                 to=player, type="indigo_tile" if i < num_indigo else "corn_tile"
             )
         self.expose_tiles()
-
-        # # Take first action (governor assignment)
-        # self.take_action()
+        
         return self
 
     def asdict(self):
-        d = dict()
+        data = dict()
 
         for role, data in self.roles.items():
-            d[f"{role} is available"] = data.available
+            data[f"{role} is available"] = data.available
 
-            bin_extend(d, f"{role} money", data.money, sup=7)
+            bin_extend(data, f"{role} money", data.money, sup=7)
 
-        bin_extend(d, "money", self.money, sup=60)
-        bin_extend(d, "people", self.people, sup=100)
-        bin_extend(d, "points", self.points, sup=122)
+        bin_extend(data, "money", self.money, sup=60)
+        bin_extend(data, "people", self.people, sup=100)
+        bin_extend(data, "points", self.points, sup=122)
 
         for good in GOODS:
-            bin_extend(d, good, getattr(self, good), sup=12)
+            bin_extend(data, good, getattr(self, good), sup=12)
 
-        bin_extend(d, f"covered tiles", len(self.unsettled_tiles), sup=63)
-        bin_extend(d, f"quarries", self.unsettled_quarries, sup=7)
+        bin_extend(data, f"covered tiles", len(self.unsettled_tiles), sup=63)
+        bin_extend(data, f"quarries", self.unsettled_quarries, sup=7)
 
         for type in TILE_INFO:
-            bin_extend(d, type, self.exposed_tiles.count(type), sup=6)
+            bin_extend(data, type, self.exposed_tiles.count(type), sup=6)
 
-        bin_extend(d, "people in ship", self.people_ship, sup=15)
+        bin_extend(data, "people in ship", self.people_ship, sup=15)
 
         for ship in self.goods_fleet.values():
-            bin_extend(d, f"ship({ship.size}) space", ship.size - ship.amount, sup=7)
+            bin_extend(data, f"ship({ship.size}) space", ship.size - ship.amount, sup=7)
             for good in GOODS:
-                d[f"ship({ship.size}) has {good}"] = int(ship.type == good)
+                data[f"ship({ship.size}) has {good}"] = int(ship.type == good)
 
-        bin_extend(d, f"market space", 4 - len(self.market), sup=4)
+        bin_extend(data, f"market space", 4 - len(self.market), sup=4)
         for good in GOODS:
-            d[f"market has {good}"] = int(good in self.market)
+            data[f"market has {good}"] = int(good in self.market)
 
         for building, info in BUILD_INFO.items():
-            bin_extend(d, building, self.unbuilt[building], sup=info["initial"])
+            bin_extend(data, building, self.unbuilt[building], sup=info["initial"])
 
-        return d
+        return data
 
     def empty_ships_and_market(self):
         for size, data in self.goods_fleet.items():
@@ -165,7 +164,7 @@ class Board(Holder):
         buildinfo = BUILD_INFO[building_type]
         tier = buildinfo["tier"]
         cost = buildinfo["cost"]
-        quarries_discount = min(tier, town.active_quarries())
+        quarries_discount = min(tier, town.count_active_quarries())
         builder_discount = 1 if town.role == "builder" else 0
         price = max(0, cost - quarries_discount - builder_discount)
         assert town.money >= price, f"Player does not have enough money."
@@ -212,20 +211,15 @@ class Board(Holder):
         placed, worked = to.tiles["quarry_tile"]
         to.tiles["quarry_tile"] = WorkplaceData(placed + 1, worked)
 
-    def give_role(self, role: Role, *, to: Union[str, Town]):
-        if isinstance(to, str):
-            town = self.towns[to]
-        else:
-            town = to
-
-        assert town.role is None, f"Player {to} already as role {town.role}."
+    def give_role(self, role: Role, *, to: Town):
+        assert to.role is None, f"Player {to} already as role {to.role}."
         assert role in ROLES, f"Role {role} is not available."
 
         assert role in self.roles, f"Role {role} is not available."
         assert self.roles[role].available, f"Role {role} is not available."
 
-        town.role = role
-        town.money += self.roles[role].money
+        to.role = role
+        to.money += self.roles[role].money
         self.roles[role] = RoleData(False, 0)
     
     def get_governor_name(self) -> Optional[str]:

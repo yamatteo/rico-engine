@@ -1,30 +1,15 @@
-from typing import Literal, Optional, Sequence, Union
-from attr import define, asdict
-from itertools import product, combinations
-from copy import deepcopy
 import random
+from copy import deepcopy
+from itertools import combinations, product
+from typing import Literal, Optional, Sequence, Union
 
+from attr import asdict, define
+
+from . import (BUILD_INFO, BUILDINGS, GOODS, LARGE_BUILDINGS, ROLES, TILES,
+               ActionType, Building, Good, PeopleHolder, PeopleAssignment, Role, ShipData, Tile,
+               Town, WorkplaceData)
 from .boards import Board
-from . import (
-    ActionType,
-    ROLES,
-    GOODS,
-    Good,
-    BUILDINGS,
-    LARGE_BUILDINGS,
-    BUILD_INFO,
-    Building,
-    TILES,
-    Tile,
-    Role,
-    Town,
-    ShipData,
-    WorkplaceData,
-)
 
-PeopleHolder = Union[Literal["home"], Tile, Building]
-PeopleAssignment = tuple[PeopleHolder, int]
-# PeopleDistribution = list[PeopleAssignment]
 
 class PeopleDistribution(list[PeopleAssignment]):
     pass
@@ -45,12 +30,6 @@ class Action:
 
     def react(self, board: Board) -> tuple[Board, Sequence["Action"]]:
         raise NotImplementedError
-
-    def responds_to(self, other: "Action") -> bool:
-        exact_type = self.type == other.type
-        exact_name = self.name == other.name
-        complete = all(value is not None for value in asdict(self).values())
-        return exact_type and exact_name and complete
 
 
 @define
@@ -77,9 +56,13 @@ class GovernorAction(Action):
         if board.money >= 3:
             board.reset_roles()
         else:
-            return board, [
-                TerminateAction(name=action.name, reason="Not enough money for roles.")
-            ]
+            board.endgame_reason = "money"
+
+            # return board, [
+            #     TerminateAction(name=action.name, reason="Not enough money for roles.")
+            # ]
+        if board.endgame_reason:
+            raise GameOver(board.endgame_reason)
 
         return board, extra
 
@@ -151,204 +134,24 @@ class RoleAction(Action):
                 board.give(1, "money", to=town)
                 extra = []
             if board.count("money") <= 0:
-                extra = [TerminateAction(name=action.name, reason="No more money.")]
+                board.endgame_reason = "money"
+                # extra = [TerminateAction(name=action.name, reason="No more money.")]
 
         return board, extra
 
 
-@define
-class TerminateAction(Action):
-    reason: str
-    type: Literal["terminate"] = "terminate"
-    priority: int = 1
+# @define
+# class TerminateAction(Action):
+#     reason: str
+#     type: Literal["terminate"] = "terminate"
+#     priority: int = 1
 
-    def possibilities(self, board: Board, **kwargs) -> list[Action]:
-        return [self]
+#     def possibilities(self, board: Board, **kwargs) -> list[Action]:
+#         return [self]
 
-    def react(action, board: Board):
-        raise GameOver(action.reason)
+#     def react(action, board: Board):
+#         raise GameOver(action.reason)
 
-
-@define
-class BuilderAction(Action):
-    building_type: Optional[Building] = None
-    extra_person: bool = False
-    type: Literal["builder"] = "builder"
-    priority: int = 5
-
-    def __str__(self):
-        return f"{self.name}.build({self.building_type}{' with worker' if self.extra_person else ''})"
-
-    def can_take_extra_person(self, board):
-        town = board.towns[self.name]
-        return town.privilege("university") and board.people > 0
-
-    def get_available_buildings(self, board):
-        town = board.towns[self.name]
-        builder_discount = 1 if town.role == "builder" else 0
-        free_space = town.count_free_build_space()
-        type_possibilities: list[Building] = []
-        for type in BUILDINGS:
-            tier = BUILD_INFO[type]["tier"]
-            cost = BUILD_INFO[type]["cost"]
-            required_space = 2 if type in LARGE_BUILDINGS else 1
-            quarries_discount = min(tier, town.active_quarries())
-            price = max(0, cost - quarries_discount - builder_discount)
-            if (
-                board.unbuilt[type] > 0  # A building of this type is available
-                and town.buildings[type].placed == 0  # Town doesn't have it
-                and town.money >= price  # Town has enough money
-                and free_space >= required_space  # Town has enough space
-            ):
-                type_possibilities.append(type)
-        return type_possibilities
-
-    def possibilities(self, board: Board, **kwargs) -> Sequence[Action]:
-        town = board.towns[self.name]
-
-        extra_person_possibilities = (
-            [False, True] if self.can_take_extra_person(board) else [False]
-        )
-
-        type_possibilities: list[Building] = self.get_available_buildings(board)
-
-        return [RefuseAction(name=town.name)] + [
-            BuilderAction(name=town.name, building_type=type, extra_person=extra)
-            for (type, extra) in product(type_possibilities, extra_person_possibilities)
-        ]
-
-    def react(action, board: Board):
-        town = board.towns[action.name]
-        assert action.building_type is not None, f"Action {action} is not complete."
-
-        board.give_building(action.building_type, to=town)
-        if action.extra_person:
-            assert (
-                town.privilege("university") and board.people > 0
-            ), "Can't ask for extra worker"
-            board.people -= 1
-            town.buildings[action.building_type] = WorkplaceData(1, 1)
-
-        extra = []
-        # Stop for building space
-        if town.count_free_build_space() == 0:
-            extra.append(
-                TerminateAction(
-                    name=action.name, reason="Game over: no more real estate."
-                )
-            )
-
-        return board, extra
-
-
-@define
-class RefuseAction(Action):
-    type: Literal["refuse"] = "refuse"
-    priority: int = 4
-
-    def __str__(self):
-        return f"{self.name}.refuse()"
-
-    def possibilities(self, board: Board, **kwargs):
-        return [self]
-
-    def react(action, board: Board) -> tuple[Board, list[Action]]:
-        return board, []
-
-    def responds_to(self, other: "Action") -> bool:
-        exact_name = self.name == other.name
-        refusal_type = other.type in [
-            "builder",
-            "captain",
-            "craftsman",
-            "settler",
-            # "storage",
-            "trader",
-        ]
-        return refusal_type and exact_name
-
-
-@define
-class CaptainAction(Action):
-    selected_ship: Optional[int] = None
-    selected_good: Optional[Good] = None
-    type: Literal["captain"] = "captain"
-    priority: int = 5
-
-    def __str__(self):
-        return f"{self.name}.captain({self.selected_good} in {self.selected_ship})"
-
-    def possibilities(self, board: Board, **kwargs) -> Sequence[Action]:
-        town = board.towns[self.name]
-        actions = [] + [RefuseAction(name=town.name)]
-        for selected_good in GOODS:
-            if not town.has(selected_good):
-                continue
-            if town.privilege("wharf") and not town.spent_wharf:
-                actions.append(
-                    CaptainAction(
-                        name=town.name, selected_good=selected_good, selected_ship=11
-                    )
-                )
-            for ship_size in board.goods_fleet:
-                if board.ship_accept(ship_size=ship_size, good=selected_good):
-                    actions.append(
-                        CaptainAction(
-                            name=town.name,
-                            selected_good=selected_good,
-                            selected_ship=ship_size,
-                        )
-                    )
-
-        return actions
-
-    def react(action, board: Board) -> tuple[Board, Sequence[Action]]:
-        town = board.towns[action.name]
-        ship_size = action.selected_ship
-        good = action.selected_good
-        assert ship_size is not None
-        assert good is not None
-
-        # Want to use wharf
-        if ship_size == 11:
-            assert (
-                town.privilege("wharf") and not town.spent_wharf
-            ), "Player does not have a free wharf."
-
-            town.spent_wharf = True
-            amount = town.count(good)
-            town.give(amount, good, to=board)
-            points = amount
-            if town.privilege("harbor"):
-                points += 1
-            if town.role == "captain" and not town.spent_captain:
-                points += 1
-                town.spent_captain = True
-            board.give_or_make(points, "points", to=town)
-
-        else:
-            assert board.ship_accept(
-                ship_size=ship_size, good=good
-            ), f"Ship {ship_size} cannot accept {good}."
-
-            amount = board.goods_fleet[ship_size].amount
-            given_amount = min(ship_size - amount, town.count(good))
-
-            board.load_cargo(town.pop(good, given_amount), good, ship_size)
-
-            points = given_amount
-            if town.privilege("harbor"):
-                points += 1
-            if town.role == "captain" and not town.spent_captain:
-                points += 1
-                town.spent_captain = True
-            board.give_or_make(points, "points", to=town)
-
-        extra = []
-        if sum(town.count(g) for g in GOODS) > 0:
-            extra = [CaptainAction(name=action.name)]
-
-        return board, extra
 
 
 @define
@@ -386,10 +189,10 @@ class StorageAction(Action):
                 town.give("all", good, to=board)
         return board, []
 
-    def responds_to(self, other: "Action") -> bool:
-        exact_type = self.type == other.type
-        exact_name = self.name == other.name
-        return exact_type and exact_name
+    # def responds_to(self, other: "Action") -> bool:
+    #     exact_type = self.type == other.type
+    #     exact_name = self.name == other.name
+    #     return exact_type and exact_name
 
     def possibilities_with_three_warehouses(
         self, board: Board
@@ -540,19 +343,207 @@ class TidyupAction(Action):
             if board.count("people") >= total_jobs:
                 board.people_ship = board.pop("people", total_jobs)
             else:
-                extra.append(
-                    TerminateAction(name=action.name, reason="No more people.")
-                )
+                # extra.append(
+                #     TerminateAction(name=action.name, reason="No more people.")
+                # )
+                board.endgame_reason = "people"
 
         # Check that there are points left
         if board.points <= 0:
-            extra.append(TerminateAction(name=action.name, reason="No more points."))
+            board.endgame_reason = "points"
+            # extra.append(TerminateAction(name=action.name, reason="No more points."))
 
         return board, extra
 
     def possibilities(self, board: Board, **kwargs) -> Sequence[Action]:
         return [self]
 
+
+@define
+class BuilderAction(Action):
+    building_type: Optional[Building] = None
+    extra_person: bool = False
+    type: Literal["builder"] = "builder"
+    priority: int = 5
+
+    def __str__(self):
+        return f"{self.name}.build({self.building_type}{' with worker' if self.extra_person else ''})"
+
+    def can_take_extra_person(self, board):
+        town = board.towns[self.name]
+        return town.privilege("university") and board.people > 0
+
+    def get_available_buildings(self, board):
+        town = board.towns[self.name]
+        builder_discount = 1 if town.role == "builder" else 0
+        free_space = town.count_free_build_space()
+        type_possibilities: list[Building] = []
+        for type in BUILDINGS:
+            tier = BUILD_INFO[type]["tier"]
+            cost = BUILD_INFO[type]["cost"]
+            required_space = 2 if type in LARGE_BUILDINGS else 1
+            quarries_discount = min(tier, town.count_active_quarries())
+            price = max(0, cost - quarries_discount - builder_discount)
+            if (
+                board.unbuilt[type] > 0  # A building of this type is available
+                and town.buildings[type].placed == 0  # Town doesn't have it
+                and town.money >= price  # Town has enough money
+                and free_space >= required_space  # Town has enough space
+            ):
+                type_possibilities.append(type)
+        return type_possibilities
+
+    def possibilities(self, board: Board, **kwargs) -> Sequence[Action]:
+        town = board.towns[self.name]
+
+        extra_person_possibilities = (
+            [False, True] if self.can_take_extra_person(board) else [False]
+        )
+
+        type_possibilities: list[Building] = self.get_available_buildings(board)
+
+        return [BuilderAction(name=town.name)] + [
+            BuilderAction(name=town.name, building_type=type, extra_person=extra)
+            for (type, extra) in product(type_possibilities, extra_person_possibilities)
+        ]
+
+    def react(action, board: Board):
+        town = board.towns[action.name]
+        # assert action.building_type is not None, f"Action {action} is not complete."
+        if action.building_type is None:
+            return board, []
+
+        board.give_building(action.building_type, to=town)
+        if action.extra_person:
+            assert (
+                town.privilege("university") and board.people > 0
+            ), "Can't ask for extra worker"
+            board.people -= 1
+            town.buildings[action.building_type] = WorkplaceData(1, 1)
+
+        extra = []
+        # Stop for building space
+        if town.count_free_build_space() == 0:
+            # extra.append(
+            #     TerminateAction(
+            #         name=action.name, reason="Game over: no more real estate."
+            #     )
+            # )
+            board.endgame_reason = "building_space"
+
+        return board, extra
+
+
+# @define
+# class RefuseAction(Action):
+#     type: Literal["refuse"] = "refuse"
+#     priority: int = 4
+
+#     def __str__(self):
+#         return f"{self.name}.refuse()"
+
+#     def possibilities(self, board: Board, **kwargs):
+#         return [self]
+
+#     def react(action, board: Board) -> tuple[Board, list[Action]]:
+#         return board, []
+
+#     def responds_to(self, other: "Action") -> bool:
+#         exact_name = self.name == other.name
+#         refusal_type = other.type in [
+#             "builder",
+#             "captain",
+#             "craftsman",
+#             "settler",
+#             # "storage",
+#             "trader",
+#         ]
+#         return refusal_type and exact_name
+
+
+@define
+class CaptainAction(Action):
+    selected_ship: Optional[int] = None
+    selected_good: Optional[Good] = None
+    type: Literal["captain"] = "captain"
+    priority: int = 5
+
+    def __str__(self):
+        return f"{self.name}.captain({self.selected_good} in {self.selected_ship})"
+
+    def possibilities(self, board: Board, **kwargs) -> Sequence["CaptainAction"]:
+        town = board.towns[self.name]
+        actions = [CaptainAction(name=town.name)]
+        for selected_good in GOODS:
+            if not town.has(selected_good):
+                continue
+            if town.privilege("wharf") and not town.spent_wharf:
+                actions.append(
+                    CaptainAction(
+                        name=town.name, selected_good=selected_good, selected_ship=11
+                    )
+                )
+            for ship_size in board.goods_fleet:
+                if board.ship_accept(ship_size=ship_size, good=selected_good):
+                    actions.append(
+                        CaptainAction(
+                            name=town.name,
+                            selected_good=selected_good,
+                            selected_ship=ship_size,
+                        )
+                    )
+
+        return actions
+
+    def react(action, board: Board) -> tuple[Board, Sequence[Action]]:
+        town = board.towns[action.name]
+        ship_size = action.selected_ship
+        good = action.selected_good
+        # assert ship_size is not None
+        # assert good is not None
+        if ship_size is None or good is None:
+            return board, []
+
+        # Want to use wharf
+        if ship_size == 11:
+            assert (
+                town.privilege("wharf") and not town.spent_wharf
+            ), "Player does not have a free wharf."
+
+            town.spent_wharf = True
+            amount = town.count(good)
+            town.give(amount, good, to=board)
+            points = amount
+            if town.privilege("harbor"):
+                points += 1
+            if town.role == "captain" and not town.spent_captain:
+                points += 1
+                town.spent_captain = True
+            board.give(points, "points", to=town, makable=True)
+
+        else:
+            assert board.ship_accept(
+                ship_size=ship_size, good=good
+            ), f"Ship {ship_size} cannot accept {good}."
+
+            amount = board.goods_fleet[ship_size].amount
+            given_amount = min(ship_size - amount, town.count(good))
+
+            board.load_cargo(town.pop(good, given_amount), good, ship_size)
+
+            points = given_amount
+            if town.privilege("harbor"):
+                points += 1
+            if town.role == "captain" and not town.spent_captain:
+                points += 1
+                town.spent_captain = True
+            board.give(points, "points", to=town, makable=True)
+
+        extra = []
+        if sum(town.count(g) for g in GOODS) > 0:
+            extra = [CaptainAction(name=action.name)]
+
+        return board, extra
 
 @define
 class CraftsmanAction(Action):
@@ -566,7 +557,10 @@ class CraftsmanAction(Action):
     def react(action, board: Board) -> tuple[Board, list[Action]]:
         good = action.selected_good
         town = board.towns[action.name]
-        assert good is not None, "Action is not complete."
+        # assert good is not None, "Action is not complete."
+        if good is None:
+            return board, []
+        
         assert (
             town.production(good) > 0
         ), f"Craftsman get one extra good of something he produces, not {good}."
@@ -575,7 +569,7 @@ class CraftsmanAction(Action):
         board.give(1, good, to=town)
         return board, []
 
-    def possibilities(self, board: Board, **kwargs) -> Sequence[Action]:
+    def possibilities(self, board: Board, **kwargs) -> Sequence["CraftsmanAction"]:
         town = board.towns[self.name]
         actions = list()
         for selected_good in GOODS:
@@ -583,7 +577,7 @@ class CraftsmanAction(Action):
                 actions.append(
                     CraftsmanAction(name=town.name, selected_good=selected_good)
                 )
-        actions.append(RefuseAction(name=town.name))
+        actions.append(CraftsmanAction(name=town.name))
         return actions
 
 
@@ -607,7 +601,7 @@ class MayorAction(Action):
 
         updated_town = deepcopy(town)
         (first_holder, people_at_home), *assignments = action.people_distribution
-        holders = updated_town.list_tiles() + updated_town.list_buildings()
+        holders = updated_town.placed_tiles() + updated_town.placed_buildings()
         assert first_holder == "home", "Need to now how many worker stay home."
         assert len(assignments) == len(
             holders
@@ -644,8 +638,8 @@ class MayorAction(Action):
         people, space = town.count_total_people(), town.count_total_jobs()
         holders = [
             "home",
-            *town.list_tiles(),
-            *town.list_buildings(),
+            *town.placed_tiles(),
+            *town.placed_buildings(),
         ]
 
         if people >= space:
@@ -705,7 +699,10 @@ class SettlerAction(Action):
     def react(action, board: Board) -> tuple[Board, list[Action]]:
         town: Town = board.towns[action.name]
 
-        assert action.tile is not None, "Action is not complete"
+        # assert action.tile is not None, "Action is not complete"
+        if action.tile is None:
+            return board, []
+        
         assert not action.down_tile or town.privilege(
             "hacienda"
         ), "Can't take down tile without occupied hacienda."
@@ -736,7 +733,7 @@ class SettlerAction(Action):
 
         return board, []
 
-    def possibilities(self, board: Board, **kwargs) -> Sequence[Action]:
+    def possibilities(self, board: Board, **kwargs) -> Sequence["SettlerAction"]:
         town = board.towns[self.name]
         actions = []
         if sum(data.placed for data in town.tiles.values()) < 12:
@@ -765,7 +762,7 @@ class SettlerAction(Action):
                         SettlerAction(name=town.name, tile=tile_type, extra_person=True)
                     )
 
-        return [RefuseAction(name=town.name)] + actions
+        return [SettlerAction(name=town.name)] + actions
 
 
 @define
@@ -780,7 +777,10 @@ class TraderAction(Action):
     def react(action, board: Board) -> tuple[Board, list[Action]]:
         good = action.selected_good
         town = board.towns[action.name]
-        assert good is not None, "Action is not complete"
+        # assert good is not None, "Action is not complete"
+        if good is None:
+            return board, []
+
         assert (
             sum(board.market.count(g) for g in GOODS) < 4
         ), "There is no more space in the market."
@@ -797,9 +797,9 @@ class TraderAction(Action):
         board.give(affordable_price, "money", to=town)
         return board, []
 
-    def possibilities(self, board: Board, **kwargs) -> Sequence[Action]:
+    def possibilities(self, board: Board, **kwargs) -> Sequence["TraderAction"]:
         town = board.towns[self.name]
-        actions = [RefuseAction(name=town.name)]
+        actions = [TraderAction(name=town.name)]
         if sum(board.market.count(g) for g in GOODS) >= 4:
             return actions
         for selected_good in [good for good in GOODS if town.has(good)]:

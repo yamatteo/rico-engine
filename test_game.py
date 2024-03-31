@@ -20,6 +20,17 @@ class TestFixedGame4(unittest.TestCase):
         assert game.play_order == ["Aa", "Ba", "Ca", "Da"]
         self.assertEqual(list(game.current_round()), list(game.board.towns.values()))
     
+    def test_points_are_given_even_when_there_is_no_points_left(self):
+        game, board = self.game, self.game.board
+        Aa, Ba, Ca, Da = board.towns.values()
+        Aa.corn = 3
+        board.points = 1
+        game.take_action(GovernorAction("Aa"))
+        game.take_action(RoleAction("Aa", role="captain"))
+        game.take_action(CaptainAction("Aa", selected_ship=5, selected_good="corn"))
+        assert board.points == 0
+        assert Aa.points == 4  # Three from corn, one for being captain
+    
     def test_serialization(self):
         data = self.game.dumps()
         self.assertIsInstance(data, str)
@@ -65,7 +76,6 @@ class TestFixedGame4(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.game.take_action(RoleAction("Aa", role="second_prospector"))
 
-
 class TestBoard3(unittest.TestCase):
 
     def setUp(self):
@@ -97,9 +107,52 @@ class TestTown(unittest.TestCase):
         self.assertEqual(self.town.money, 0)
         self.assertIsNone(self.town.role)
 
-    # def test_give_building(self):
-    #     self.town.give_building('tobacco_storage')
-    #     self.assertEqual(self.town.buildings['tobacco_storage'].placed, 1)
+    def test_production_corn(self):
+        # Test when there are no workers on corn tile
+        self.town.tiles["corn_tile"] = WorkplaceData(0, 0)
+        self.assertEqual(self.town.production("corn"), 0)
+
+        # Test when there are workers on corn tile
+        self.town.tiles["corn_tile"] = WorkplaceData(2, 2)
+        self.assertEqual(self.town.production("corn"), 2)
+
+    def test_production_coffee(self):
+        # Test when there are no coffee roasters
+        self.town.tiles["coffee_tile"] = WorkplaceData(5, 2)
+        self.assertEqual(self.town.production("coffee"), 0)
+
+        # Test when there are coffee roasters, but no workers
+        self.town.buildings["coffee_roaster"] = WorkplaceData(1, 0)
+        self.assertEqual(self.town.production("coffee"), 0)
+
+        # Test when there are coffee roasters and workers
+        self.town.buildings["coffee_roaster"] = WorkplaceData(1, 1)
+        self.assertEqual(self.town.production("coffee"), 1)
+
+        # Test when there are more workers on coffee tile than coffee roasters
+        self.town.tiles["coffee_tile"] = WorkplaceData(5, 5)
+        self.assertEqual(self.town.production("coffee"), 1)
+
+    def test_production_indigo(self):
+        # Test when there are no indigo plants
+        self.town.tiles["indigo_tile"] = WorkplaceData(3, 2)
+        self.assertEqual(self.town.production("indigo"), 0)
+
+        # Test when there are small indigo plants, but no workers
+        self.town.buildings["small_indigo_plant"] = WorkplaceData(2, 0)
+        self.assertEqual(self.town.production("indigo"), 0)
+
+        # Test when there are small indigo plants and workers
+        self.town.buildings["small_indigo_plant"] = WorkplaceData(2, 2)
+        self.assertEqual(self.town.production("indigo"), 2)
+
+        # Test when there are more workers on indigo tile than indigo plants
+        self.town.tiles["indigo_tile"] = WorkplaceData(5, 5)
+        self.assertEqual(self.town.production("indigo"), 2)
+
+        # Test when there are indigo plants and workers
+        self.town.buildings["indigo_plant"] = WorkplaceData(1, 1)
+        self.assertEqual(self.town.production("indigo"), 3)
 
 class TestConstants(unittest.TestCase):
 

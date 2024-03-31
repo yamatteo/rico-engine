@@ -25,27 +25,17 @@ class Holder:
         else:
             amount: int = 1
             type: str = args[0]
-        return getattr(self, type, 0) >= amount
+        return self.count(type) >= amount
 
-    def give(self, amount: Union[int, Literal["all"]], attr: str, *, to: "Holder"):
+    def give(self, amount: Union[int, Literal["all"]], attr: str, *, to: "Holder", makable: bool=False):
         if amount == "all":
             amount = self.count(attr)
         assert hasattr(to, attr), f"Object {to} can't accept {attr}."
-        assert self.count(attr) >= amount, f"Not enough {attr} in {self}."
-        self.set(attr, self.count(attr) - amount)
-        to.set(attr, to.count(attr) + amount)
-
-    def give_or_make(self, amount: Union[int, Literal["all"]], attr: str, *, to: "Holder"):
-        if amount == "all":
-            amount = self.count(attr)
-        assert hasattr(to, attr), f"Object {to} can't accept {attr}."
-        self.set(attr, max(0, self.count(attr) - amount))
-        to.set(attr, to.count(attr) + amount)
+        assert self.count(attr) >= amount or makable, f"Not enough {attr} in {self}."
+        setattr(self, attr, max(0, self.count(attr) - amount))
+        setattr(to, attr, to.count(attr) + amount)
     
     def pop(self, attr: str, value: int) -> int:
         assert self.has(value, attr), f"Object {self} don't have {value} {attr}."
         self.add(attr, -value)
         return value
-
-    def set(self, attr: str, amount: int):
-        setattr(self, attr, amount)

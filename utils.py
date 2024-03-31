@@ -4,7 +4,7 @@ from typing import Generic, List as TypingList, Optional, TypeVar
 
 from attr import define
 
-from .constants import Good
+from .constants import Good, PeopleHolder
 
 
 def bin_mod(n: int, log2=0) -> int:
@@ -41,3 +41,8 @@ class WorkplaceData:
     def __iter__(self):
         yield self.placed
         yield self.worked
+
+@define
+class PeopleAssignment:
+    holder: PeopleHolder
+    amount: int

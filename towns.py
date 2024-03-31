@@ -1,10 +1,9 @@
-from typing import Literal, Optional, overload
+from typing import Optional, overload
 
-from attr import Factory, asdict, define
-
-from .holders import Holder
+from attr import Factory, define
 
 from .constants import *
+from .holders import Holder
 from .utils import WorkplaceData, bin_extend, bin_mod
 
 
@@ -35,119 +34,52 @@ class Town(Holder):
         lambda: {b: WorkplaceData(0, 0) for b in BUILDINGS}
     )
 
-    def active_quarries(self) -> int:
-        return self.tiles["quarry_tile"].worked
-
-    # def active_tiles(self, type: Tile) -> int:
-    #     return self.worked_tiles[TILES.index(type)]
-
-    def active_workers(
-        self, subclass: Literal["coffee", "tobacco", "sugar", "indigo"]
-    ) -> int:
-        if subclass == "coffee":
-            space = BUILD_INFO["coffee_roaster"]["space"]
-            workers = self.buildings["coffee_roaster"].worked
-            return min(space, workers)
-        if subclass == "indigo":
-            space_i = BUILD_INFO["small_indigo_plant"]["space"]
-            workers_i = self.buildings["small_indigo_plant"].worked
-            space_j = BUILD_INFO["indigo_plant"]["space"]
-            workers_j = self.buildings["indigo_plant"].worked
-            return min(space_i, workers_i) + min(space_j, workers_j)
-        if subclass == "sugar":
-            space_i = BUILD_INFO["sugar_mill"]["space"]
-            workers_i = self.buildings["sugar_mill"].worked
-            space_j = BUILD_INFO["small_sugar_mill"]["space"]
-            workers_j = self.buildings["small_sugar_mill"].worked
-            return min(space_i, workers_i) + min(space_j, workers_j)
-        if subclass == "tobacco":
-            space = BUILD_INFO["tobacco_storage"]["space"]
-            workers = self.buildings["tobacco_storage"].worked
-            return min(space, workers)
-
     def asdict(self) -> dict:
-        d = dict()
+        data = dict()
 
-        d["is governor"] = int(self.gov)
-        d["spent captain"] = int(self.spent_captain)
-        d["spent wharf"] = int(self.spent_wharf)
+        data["is governor"] = int(self.gov)
+        data["spent captain"] = int(self.spent_captain)
+        data["spent wharf"] = int(self.spent_wharf)
 
-        bin_extend(d, "money", self.money, sup=15)
-        bin_extend(d, "people", self.people, sup=7)
-        bin_extend(d, "points", self.points, sup=100)
+        bin_extend(data, "money", self.money, sup=15)
+        bin_extend(data, "people", self.people, sup=7)
+        bin_extend(data, "points", self.points, sup=100)
 
         for good in GOODS:
-            bin_extend(d, good, getattr(self, good), sup=12)
+            bin_extend(data, good, getattr(self, good), sup=12)
 
         for r in ROLES:
-            d[r] = int(self.role == r)
+            data[r] = int(self.role == r)
 
         for tile, data in self.tiles.items():
-            bin_extend(d, f"placed {tile}", data.placed, sup=12)
-            bin_extend(d, f"worked {tile}", data.placed, sup=12)
+            bin_extend(data, f"placed {tile}", data.placed, sup=12)
+            bin_extend(data, f"worked {tile}", data.placed, sup=12)
 
         for building in PROD_BUILDINGS:
             data = self.buildings[building]
-            d[f"{building} placed"] = data.placed
-            d[f"{building} worked %% 1"] = bin_mod(data.worked, 0)
-            d[f"{building} worked %% 2"] = bin_mod(data.worked, 1)
+            data[f"{building} placed"] = data.placed
+            data[f"{building} worked %% 1"] = bin_mod(data.worked, 0)
+            data[f"{building} worked %% 2"] = bin_mod(data.worked, 1)
 
         for building in NONPROD_BUILDINGS:
             data = self.buildings[building]
-            d[f"{building} placed"] = data.placed
-            d[f"{building} worked"] = data.worked
+            data[f"{building} placed"] = data.placed
+            data[f"{building} worked"] = data.worked
 
-        return d
+        return data
 
-    # def as_tuple(self) -> tuple[int, ...]:
-    #     """Town as a tuple of ints without loss of information."""
-    #     self_as_list = []
-    #     self_as_list_names = []
+    def count_active_quarries(self) -> int:
+        return self.tiles["quarry_tile"].worked
 
-    #     # Some information is already a counting integer, or a boolean integer
-    #     self_as_list_names += [
-    #                 "gov",
-    #                 "spent_captain",
-    #                 "spent_wharf",
-    #                 "coffee",
-    #                 "corn",
-    #                 "indigo",
-    #                 "money",
-    #                 "people",
-    #                 "points",
-    #                 "sugar",
-    #                 "tobacco",
-    #             ]
-
-    #     self_as_list += [
-    #             int(getattr(self, name))
-    #             for name in self_as_list_names
-    #     ]
-
-    #     # One hot encoding of the role, no role goes to (0, 0, 0, ...)
-    #     self_as_list_names += list(ROLES)
-    #     self_as_list += [int(self.role == r) for r in ROLES]
-
-    #     for tile, data in self.tiles.items():
-    #         self_as_list_names += [f"placed {tile} > {n}" for n in range(12)]
-    #         self_as_list += [int(data.placed > n) for n in range(12)]
-    #         self_as_list_names += [f"worked {tile} > {n}" for n in range(12)]
-    #         self_as_list += [int(data.worked > n) for n in range(12)]
-
-    #     for building in PROD_BUILDINGS:
-    #         data = self.buildings[building]
-    #         self_as_list_names += [f"{building} placed"] + [f"{building} worked > {n}" for n in range(3)]
-    #         self_as_list += [data.placed] + [int(data.worked > n) for n in range(3)]
-
-    #     for building in NONPROD_BUILDINGS:
-    #         data = self.buildings[building]
-    #         self_as_list_names += [f"{building} placed", f"{building} worked"]
-    #         self_as_list += [data.placed, data.worked]
-
-    #     return tuple(self_as_list_names), tuple(self_as_list)
-
-    # def count_farmers(self, tile_type: Tile) -> int:
-    #     return self.worked_tiles[TILES.index(tile_type)]
+    def count_active_workers(self, good: Good) -> int:
+        production_buildings = dict(
+            corn=[],
+            indigo=["small_indigo_plant", "indigo_plant"],
+            sugar=["small_sugar_mill", "sugar_mill"],
+            tobacco=["tobacco_storage"],
+            coffee=["coffee_roaster"],
+        )[good]
+        return sum(self.buildings[building].worked for building in production_buildings)
 
     def count_free_build_space(self) -> int:
         total = 12
@@ -182,25 +114,22 @@ class Town(Holder):
                 total += max(0, space - people)
         return total
 
-    # def count_workers(self, build_type: Building) -> int:
-    #     i = BUILDINGS.index(build_type)
-    #     return max(0, self.buildings_mixed[i])
-
-    # def copy(self):
-    #     return deepcopy(self)
-
-    def privilege(self, subclass: Building) -> bool:
-        space = BUILD_INFO[subclass]["space"]
-        workers = self.buildings[subclass].worked
+    def privilege(self, building: Building) -> bool:
+        space = BUILD_INFO[building]["space"]
+        workers = self.buildings[building].worked
         return workers >= space
 
-    @overload
-    def production(self) -> dict[Good, int]:
-        ...
+    def placed_buildings(self) -> list[Building]:
+        return [b for b, info in self.buildings.items() if info.placed > 0]
+
+    def placed_tiles(self) -> list[Tile]:
+        return [tile for tile, data in self.tiles.items() if data.placed > 0]
 
     @overload
-    def production(self, good: Good) -> int:
-        ...
+    def production(self) -> dict[Good, int]: ...
+
+    @overload
+    def production(self, good: Good) -> int: ...
 
     def production(self, good: Optional[Good] = None):
         if not good:
@@ -209,48 +138,8 @@ class Town(Holder):
         raw_production = self.tiles[tile].worked
         if good == "corn":
             return raw_production
-        active_workers = self.active_workers(good)
+        active_workers = self.count_active_workers(good)
         return min(raw_production, active_workers)
-
-    @overload
-    def list_buildings(self) -> list[Building]:
-        ...
-
-    @overload
-    def list_buildings(self, attr: str) -> list[int]:
-        ...
-
-    def list_buildings(self, attr="types"):
-        if attr == "people":
-            return [info.worked for info in self.buildings.values() if info.placed > 0]
-        types: list[Building] = [b for b, info in self.buildings.items() if info.placed > 0]
-        if attr == "types":
-            return types
-        elif attr == "space":
-            return [BUILD_INFO[t]["space"] for t in types]
-        elif attr == "tier":
-            return [BUILD_INFO[t]["tier"] for t in types]
-
-    def list_tiles(self) -> list[Tile]:
-        return [ tile for tile, data in self.tiles.items() if data.placed > 0 ]
-        # l = []
-        # for tile, data in self.tiles.items():
-        #     l.extend([tile] * data.placed)
-        # return l
-
-    # @property
-    # def role(self) -> Optional[Role]:
-    #     if self.role_index == -1:
-    #         return None
-    #     return ROLES[self.role_index]
-
-    # @role.setter
-    # def role(self, role: Optional[Role]):
-    #     if role is None:
-    #         i = -1
-    #     else:
-    #         i = ROLES.index(role)
-    #     self.role_index = i
 
     def tally_details(self) -> tuple[int, ...]:
         """The value of the town as calculated after game over and its precursors."""

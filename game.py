@@ -24,32 +24,6 @@ def custom_action_structure(data, cls) -> Action:
         return game_base_converter.structure(data, _class)
     else:
         raise ValueError(f"Invalid action type: {_type}")
-    # if data.get("type") == "governor":
-    #     return GovernorAction(**data)
-    # elif data.get("type") == "role":
-    #     return RoleAction(**data)
-    # elif data.get("type") == "refuse":
-    #     return RefuseAction(**data)
-    # elif data.get("type") == "builder":
-    #     return BuilderAction(**data)
-    # elif data.get("type") == "captain":
-    #     return cattrs.structure(data, CaptainAction)
-    # elif data.get("type") == "terminate":
-    #     return TerminateAction(**data)
-    # elif data.get("type") == "craftsman":
-    #     return CraftsmanAction(**data)
-    # elif data.get("type") == "mayor":
-    #     return MayorAction(**data)
-    # elif data.get("type") == "settler":
-    #     return SettlerAction(**data)
-    # elif data.get("type") == "trader":
-    #     return TraderAction(**data)
-    # elif data.get("type") == "tidyup":
-    #     return TidyupAction(**data)
-    # elif data.get("type") == "storage":
-    #     return StorageAction(**data)
-    # else:
-    #     raise ValueError(f"Invalid action type: {data.get('type')}")
 
 
 def custom_distribution_structure(data, cls) -> PeopleDistribution:

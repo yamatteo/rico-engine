@@ -104,10 +104,10 @@ class Board(Holder):
     def asdict(self):
         data = dict()
 
-        for role, data in self.roles.items():
-            data[f"{role} is available"] = data.available
+        for role, info in self.roles.items():
+            data[f"{role} is available"] = int(info.available)
 
-            bin_extend(data, f"{role} money", data.money, sup=7)
+            bin_extend(data, f"{role} money", info.money, sup=7)
 
         bin_extend(data, "money", self.money, sup=60)
         bin_extend(data, "people", self.people, sup=100)

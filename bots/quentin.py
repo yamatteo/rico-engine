@@ -1,5 +1,5 @@
 from collections import namedtuple
-from random import sample
+from random import choice, random
 from typing import overload
 
 from .. import Game, Board, Town, Action
@@ -11,9 +11,10 @@ Evaluated = namedtuple("Evaluated", ["action", "value"])
 
 
 class Quentin:
-    def __init__(self, name: str, estimator=straight_board_estimator):
+    def __init__(self, name: str, estimator=straight_board_estimator, temperature=0):
         self.name = name
         self.estimator = estimator
+        self.temperature = temperature
 
     def decide(self, game: Game) -> Action:
         expected = game.expected
@@ -23,6 +24,9 @@ class Quentin:
             choices = expected.possibilities(board, cap=20)
         else:
             choices = expected.possibilities(board)
+        
+        if random() < self.temperature:
+            return choice(choices)
 
         best_action = choices[0]
         best_value = None

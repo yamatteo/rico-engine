@@ -7,10 +7,10 @@ from .game import Game
 
 def one_game_worth_of_data():
     bots = {
-        "Ad": Quentin("Ad"),
-        "Be": Quentin("Be"),
-        "Ca": Quentin("Ca"),
-        "Da": Quentin("Da"),
+        "Ad": Quentin("Ad", temperature=0),
+        "Be": Quentin("Be", temperature=0.2),
+        "Ca": Quentin("Ca", temperature=0.4),
+        "Da": Quentin("Da", temperature=0.6),
     }
     usernames = list(bots.keys())
     game = Game.start(usernames)

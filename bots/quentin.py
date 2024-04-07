@@ -1,7 +1,7 @@
 import random
 from typing import Optional, Sequence
 
-from .. import Action, Game, GOODS, TraderAction
+from .. import *
 from .upper_confidence_bound import StorageUCB, TraderUCB
 
 

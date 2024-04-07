@@ -1,9 +1,8 @@
 from rich import print
 
-from .actions import GameOver
+from .game import Game, GameOver
 from .bots.rufus import Rufus
 from .bots.quentin import Quentin
-from .game import Game
 
 
 def single_game(bots, print_internals=False):

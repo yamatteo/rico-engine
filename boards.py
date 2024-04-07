@@ -221,6 +221,7 @@ class Board(Holder):
         to.role = role
         to.money += self.roles[role].money
         self.roles[role] = RoleData(False, 0)
+        to.spent_role = False
     
     def get_governor_name(self) -> Optional[str]:
         for name, town in self.towns.items():

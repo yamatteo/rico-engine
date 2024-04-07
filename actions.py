@@ -110,7 +110,6 @@ class RoleAction(Action):
 
             extra.extend(MayorAction(name=name) for name in board.round_from(town.name))
             extra.append(TidyupAction(name=action.name))
-
         elif role == "builder":
             extra = [BuilderAction(name=name) for name in board.round_from(town.name)]
         elif role == "craftsman":
@@ -411,9 +410,11 @@ class BuilderAction(Action):
         town = board.towns[action.name]
         # assert action.building_type is not None, f"Action {action} is not complete."
         if action.building_type is None:
+            town.spent_role = True
             return board, []
 
         board.give_building(action.building_type, to=town)
+        town.spent_role = True
         if action.extra_person:
             assert (
                 town.privilege("university") and board.people > 0
@@ -499,9 +500,9 @@ class CaptainAction(Action):
         town = board.towns[action.name]
         ship_size = action.selected_ship
         good = action.selected_good
-        # assert ship_size is not None
-        # assert good is not None
+
         if ship_size is None or good is None:
+            town.spent_role = True
             return board, []
 
         # Want to use wharf
@@ -516,9 +517,9 @@ class CaptainAction(Action):
             points = amount
             if town.privilege("harbor"):
                 points += 1
-            if town.role == "captain" and not town.spent_captain:
+            if town.role == "captain" and not town.spent_role:
                 points += 1
-                town.spent_captain = True
+                town.spent_role = True
             board.give(points, "points", to=town, makable=True)
 
         else:
@@ -534,9 +535,9 @@ class CaptainAction(Action):
             points = given_amount
             if town.privilege("harbor"):
                 points += 1
-            if town.role == "captain" and not town.spent_captain:
+            if town.role == "captain" and not town.spent_role:
                 points += 1
-                town.spent_captain = True
+                town.spent_role = True
             board.give(points, "points", to=town, makable=True)
 
         extra = []
@@ -559,6 +560,7 @@ class CraftsmanAction(Action):
         town = board.towns[action.name]
         # assert good is not None, "Action is not complete."
         if good is None:
+            town.spent_role = True
             return board, []
         
         assert (
@@ -631,6 +633,7 @@ class MayorAction(Action):
         ), "Wrong total of people."
 
         board.towns[town.name] = updated_town
+        town.spent_role = True
         return board, []
 
     def possibilities(self, board: Board, cap=None, **kwargs) -> list["MayorAction"]:
@@ -701,6 +704,7 @@ class SettlerAction(Action):
 
         # assert action.tile is not None, "Action is not complete"
         if action.tile is None:
+            town.spent_role = True
             return board, []
         
         assert not action.down_tile or town.privilege(
@@ -731,6 +735,7 @@ class SettlerAction(Action):
         ):
             board.give_facedown_tile(to=town)
 
+        town.spent_role = True
         return board, []
 
     def possibilities(self, board: Board, **kwargs) -> Sequence["SettlerAction"]:
@@ -779,6 +784,7 @@ class TraderAction(Action):
         town = board.towns[action.name]
         # assert good is not None, "Action is not complete"
         if good is None:
+            town.spent_role = True
             return board, []
 
         assert (
@@ -795,6 +801,7 @@ class TraderAction(Action):
         town.pop(good, 1)
         board.market.append(good)
         board.give(affordable_price, "money", to=town)
+        town.spent_role = True
         return board, []
 
     def possibilities(self, board: Board, **kwargs) -> Sequence["TraderAction"]:

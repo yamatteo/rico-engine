@@ -12,7 +12,8 @@ class Town(Holder):
     name: str
 
     gov: bool = False
-    spent_captain: bool = False
+    spent_role: bool = True
+    # spent_captain: bool = False
     spent_wharf: bool = False
 
     role: Optional[Role] = None
@@ -67,6 +68,41 @@ class Town(Holder):
             data[f"{building} worked"] = data.worked
 
         return data
+
+
+    # def asdict_simple(self) -> dict:
+    #     data = dict()
+
+    #     data["is_governor"] = int(self.gov)
+    #     data["spent captain"] = int(self.spent_captain)
+    #     data["spent wharf"] = int(self.spent_wharf)
+
+    #     bin_extend(data, "money", self.money, sup=15)
+    #     bin_extend(data, "people", self.people, sup=7)
+    #     bin_extend(data, "points", self.points, sup=100)
+
+    #     for good in GOODS:
+    #         bin_extend(data, good, getattr(self, good), sup=12)
+
+    #     for r in ROLES:
+    #         data[r] = int(self.role == r)
+
+    #     for tile, data in self.tiles.items():
+    #         bin_extend(data, f"placed {tile}", data.placed, sup=12)
+    #         bin_extend(data, f"worked {tile}", data.placed, sup=12)
+
+    #     for building in PROD_BUILDINGS:
+    #         data = self.buildings[building]
+    #         data[f"{building} placed"] = data.placed
+    #         data[f"{building} worked %% 1"] = bin_mod(data.worked, 0)
+    #         data[f"{building} worked %% 2"] = bin_mod(data.worked, 1)
+
+    #     for building in NONPROD_BUILDINGS:
+    #         data = self.buildings[building]
+    #         data[f"{building} placed"] = data.placed
+    #         data[f"{building} worked"] = data.worked
+
+    #     return data
 
     def count_active_quarries(self) -> int:
         return self.tiles["quarry_tile"].worked
@@ -141,8 +177,12 @@ class Town(Holder):
         active_workers = self.count_active_workers(good)
         return min(raw_production, active_workers)
 
+    def tally(self) -> int:
+        """The value (victory points) of the town as calculated at game over."""
+        return sum(self.tally_details())
+
     def tally_details(self) -> tuple[int, ...]:
-        """The value of the town as calculated after game over and its precursors."""
+        """The precursors of value of the town as calculated after game over."""
 
         # Points from shipping goods
         points = self.points
@@ -193,17 +233,7 @@ class Town(Holder):
             occupied_tiles = sum(data.worked for data in self.tiles.values())
             residence += max(4, occupied_tiles - 5)
 
-        value = (
-            points
-            + buildings
-            + guild_hall
-            + residence
-            + fortress
-            + custom_house
-            + city_hall
-        )
         return (
-            value,
             points,
             buildings,
             city_hall,

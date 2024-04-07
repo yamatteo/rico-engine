@@ -35,45 +35,10 @@ class Town(Holder):
         lambda: {b: WorkplaceData(0, 0) for b in BUILDINGS}
     )
 
-    def asdict(self) -> dict:
-        data = dict()
-
-        data["is governor"] = int(self.gov)
-        data["spent captain"] = int(self.spent_captain)
-        data["spent wharf"] = int(self.spent_wharf)
-
-        bin_extend(data, "money", self.money, sup=15)
-        bin_extend(data, "people", self.people, sup=7)
-        bin_extend(data, "points", self.points, sup=100)
-
-        for good in GOODS:
-            bin_extend(data, good, getattr(self, good), sup=12)
-
-        for r in ROLES:
-            data[r] = int(self.role == r)
-
-        for tile, data in self.tiles.items():
-            bin_extend(data, f"placed {tile}", data.placed, sup=12)
-            bin_extend(data, f"worked {tile}", data.placed, sup=12)
-
-        for building in PROD_BUILDINGS:
-            data = self.buildings[building]
-            data[f"{building} placed"] = data.placed
-            data[f"{building} worked %% 1"] = bin_mod(data.worked, 0)
-            data[f"{building} worked %% 2"] = bin_mod(data.worked, 1)
-
-        for building in NONPROD_BUILDINGS:
-            data = self.buildings[building]
-            data[f"{building} placed"] = data.placed
-            data[f"{building} worked"] = data.worked
-
-        return data
-
-
-    # def asdict_simple(self) -> dict:
+    # def asdict_binary(self) -> dict:
     #     data = dict()
 
-    #     data["is_governor"] = int(self.gov)
+    #     data["is governor"] = int(self.gov)
     #     data["spent captain"] = int(self.spent_captain)
     #     data["spent wharf"] = int(self.spent_wharf)
 
@@ -103,6 +68,34 @@ class Town(Holder):
     #         data[f"{building} worked"] = data.worked
 
     #     return data
+
+
+    def asdict_simple(self) -> dict:
+        data = dict()
+
+        data["is_governor"] = int(self.gov)
+        data["spent_role"] = int(self.spent_role)
+        data["spent_wharf"] = int(self.spent_wharf)
+
+        data["money"] = self.money
+        data["points"] = self.points
+        data["people"] = self.people
+
+        for role in ROLES:
+            data[role] = int(self.role == role)
+
+        for good in GOODS:
+            data[good] = self.count(good)
+
+        for tile, info in self.tiles.items():
+            data[f"placed_{tile}"] = info.placed
+            data[f"worked_{tile}"] = info.worked
+
+        for building, info in self.buildings.items():
+            data[f"placed_{building}"] = info.placed
+            data[f"worked_{building}"] = info.worked
+
+        return data
 
     def count_active_quarries(self) -> int:
         return self.tiles["quarry_tile"].worked

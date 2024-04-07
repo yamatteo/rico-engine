@@ -143,7 +143,13 @@ ACTIONS: tuple[ActionType, ...] = (
     "tidyup",
     "trader",
 )
-GOODS: tuple[Good, ...] = get_args(Good)
+GOODS: tuple[Good, ...] = (
+    "corn",
+    "indigo",
+    "sugar",
+    "tobacco",
+    "coffee",
+)
 LARGE_BUILDINGS: tuple[LargeBuilding, ...] = get_args(LargeBuilding)
 PROD_BUILDINGS: tuple[ProdBuilding, ...] = get_args(ProdBuilding)
 ROLES: tuple[Role, ...] = get_args(Role)

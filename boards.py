@@ -138,6 +138,12 @@ class Board(Holder):
 
         return data
 
+    def delta_tally(self, name: str) -> int:
+        "Points difference of a player with respect to the best adversary."
+        value_wrt = self.towns[name].tally()
+        other_value = max(town.tally() for wrt, town in self.towns.items() if name != wrt)
+        return value_wrt - other_value
+
     def empty_ships_and_market(self):
         for size, data in self.goods_fleet.items():
             if data.type and data.amount >= size:

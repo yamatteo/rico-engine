@@ -2,20 +2,24 @@ import random
 from typing import Optional, Sequence
 
 from .. import Action, Game, GOODS, TraderAction
+from .upper_confidence_bound import StorageUCB, TraderUCB
 
 
 class Quentin:
     """A bot that take some decisions based on reinforcement learning."""
 
-    def __init__(self, name: str, trader: dict = {"type": "random"}):
+    def __init__(self, name: str, storage: dict = {"type": "random"}, trader: dict = {"type": "random"}):
         self.name = name
+        self.storage = quentinStorage(name=name, **storage)
         self.trader = quentinTrader(name=name, **trader)
         self.fallback = QuentinRandom()
 
     def decide(self, game: Game) -> Action:
         """Given the current game state, decides what action to take."""
         assert self.name == game.expected.name, "Not my turn!"
-        if game.expected.type == "trader":
+        if game.expected.type == "storage":
+            return self.storage.decide(game)
+        elif game.expected.type == "trader":
             return self.trader.decide(game)
         else:
             return self.fallback.decide(game)
@@ -25,6 +29,7 @@ class Quentin:
         assert (
             game.expected.type == "governor" and game.board.endgame_reason is not None
         ), "Game is not over!"
+        self.storage.terminate(game)
         self.trader.terminate(game)
 
 
@@ -33,6 +38,9 @@ class QuentinRandom:
 
     def __init__(self, **kwargs):
         pass
+
+    def __str__(self):
+        return "QuentinRandom()"
 
     def decide(self, game: Game) -> Action:
         """Decides randomly among up to 20 random (but acceptable) actions."""
@@ -57,6 +65,10 @@ class QuentinTraderBandit:
 
         # Estimated reward of selling a good, or not selling anything
         self.action_values = {None: 0} | {good: 0 for good in GOODS}
+    
+    def __str__(self):
+        values =  [f"{value:+.2f}" for value in self.action_values.values() ]
+        return f"TraderBandit({str(', ').join(values)})"
 
     def decide(self, game: Game) -> Action:
         """Decides what good to sell."""
@@ -117,6 +129,16 @@ class QuentinTraderBandit:
 def quentinTrader(type: str, **kwargs):
     if type == "bandit":
         return QuentinTraderBandit(**kwargs)
+    elif type == "ucb":
+        return TraderUCB(**kwargs)
+    elif type == "random":
+        return QuentinRandom()
+    else:
+        raise ValueError(f"Unknown type {type}.")
+
+def quentinStorage(type: str, **kwargs):
+    if type == "ucb":
+        return StorageUCB(**kwargs)
     elif type == "random":
         return QuentinRandom()
     else:

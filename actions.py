@@ -12,7 +12,34 @@ from .boards import Board
 
 
 class PeopleDistribution(list[PeopleAssignment]):
-    pass
+    def get_production(self, good: Good):
+        tile: Tile = f"{good}_tile"  # type: ignore
+        raw_production=0
+        for (place, amount) in self:
+            if place==tile:
+                raw_production = amount
+                break
+        if good == "corn":
+            return raw_production
+        production_buildings = dict(
+            corn=[],
+            indigo=["small_indigo_plant", "indigo_plant"],
+            sugar=["small_sugar_mill", "sugar_mill"],
+            tobacco=["tobacco_storage"],
+            coffee=["coffee_roaster"],
+        )[good]
+        active_workers = 0
+        for (place, amount) in self:
+            if place in production_buildings:
+                active_workers += amount
+        return min(raw_production, active_workers)
+    
+    def get_privilege(self, building: Building):
+        for (place, worked) in self:
+            if place==building:
+                return worked
+        return 0
+
 
 
 class GameOver(Exception):

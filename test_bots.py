@@ -16,8 +16,7 @@ def single_game(bots, print_internals=False):
         except GameOver:
             if print_internals:
                 print(f"  Round {m+1}. Bots internals:")
-                print("   Ad", bots["Ad"].storage)
-                print("   Be", bots["Be"].trader)
+                print(bots["Ad"].parts)
             break
     for bot in bots.values():
         bot.terminate(game)
@@ -40,12 +39,12 @@ def many_games(bots, N, m):
 
 
 if __name__ == "__main__":
-    N = 100
+    N = 500
     M = 10
     bots = {
-        "Ad": Quentin("Ad", storage=dict(type="ucb", alpha=1e-4, c=0.1)),
-        "Be": Quentin("Be", trader=dict(type="bandit", alpha=1e-3, epsilon=1e-1)),
-        "Ca": Rufus("Ca"),
+        "Ad": Quentin("Ad"),
+        "Be": Quentin("Be"),
+        "Ca": Quentin("Ca"),
         "Da": Rufus("Da"),
     }
     usernames = list(bots.keys())

@@ -1,4 +1,6 @@
-from typing import Literal, Union, get_args
+from typing import Literal
+
+## Types
 
 ActionType = Literal[
     "builder",
@@ -6,22 +8,47 @@ ActionType = Literal[
     "craftsman",
     "governor",
     "mayor",
-    # "refuse",
     "role",
     "settler",
     "storage",
-    # "terminate",
     "tidyup",
     "trader",
 ]
 
+Building = Literal[
+    "city_hall",
+    "coffee_roaster",
+    "construction_hut",
+    "custom_house",
+    "factory",
+    "fortress",
+    "guild_hall",
+    "hacienda",
+    "harbor",
+    "hospice",
+    "indigo_plant",
+    "large_market",
+    "large_warehouse",
+    "office",
+    "residence",
+    "small_indigo_plant",
+    "small_market",
+    "small_sugar_mill",
+    "small_warehouse",
+    "sugar_mill",
+    "tobacco_storage",
+    "university",
+    "wharf",
+]
+
 Good = Literal[
-    "coffee",
     "corn",
     "indigo",
     "sugar",
     "tobacco",
+    "coffee",
 ]
+
 LargeBuilding = Literal[
     "city_hall",
     "custom_house",
@@ -29,6 +56,40 @@ LargeBuilding = Literal[
     "guild_hall",
     "residence",
 ]
+
+PeopleHolder = Literal[
+    "home",
+    "coffee_tile",
+    "corn_tile",
+    "indigo_tile",
+    "quarry_tile",
+    "sugar_tile",
+    "tobacco_tile",
+    "city_hall",
+    "coffee_roaster",
+    "construction_hut",
+    "custom_house",
+    "factory",
+    "fortress",
+    "guild_hall",
+    "hacienda",
+    "harbor",
+    "hospice",
+    "indigo_plant",
+    "large_market",
+    "large_warehouse",
+    "office",
+    "residence",
+    "small_indigo_plant",
+    "small_market",
+    "small_sugar_mill",
+    "small_warehouse",
+    "sugar_mill",
+    "tobacco_storage",
+    "university",
+    "wharf",
+]
+
 ProdBuilding = Literal[
     "coffee_roaster",
     "indigo_plant",
@@ -37,6 +98,7 @@ ProdBuilding = Literal[
     "sugar_mill",
     "tobacco_storage",
 ]
+
 Role = Literal[
     "builder",
     "captain",
@@ -47,6 +109,7 @@ Role = Literal[
     "prospector",
     "second_prospector",
 ]
+
 SmallBuilding = Literal[
     "construction_hut",
     "factory",
@@ -61,6 +124,7 @@ SmallBuilding = Literal[
     "university",
     "wharf",
 ]
+
 Tile = Literal[
     "coffee_tile",
     "corn_tile",
@@ -69,65 +133,9 @@ Tile = Literal[
     "sugar_tile",
     "tobacco_tile",
 ]
-PeopleHolder = Literal[
-    "home",
-    "coffee_tile",
-    "corn_tile",
-    "indigo_tile",
-    "quarry_tile",
-    "sugar_tile",
-    "tobacco_tile",
-    "city_hall",
-    "custom_house",
-    "fortress",
-    "guild_hall",
-    "residence",
-    "coffee_roaster",
-    "indigo_plant",
-    "small_indigo_plant",
-    "small_sugar_mill",
-    "sugar_mill",
-    "tobacco_storage",
-    "construction_hut",
-    "factory",
-    "hacienda",
-    "harbor",
-    "hospice",
-    "large_market",
-    "large_warehouse",
-    "office",
-    "small_market",
-    "small_warehouse",
-    "university",
-    "wharf",
-]
 
-# Building = Union[ProdBuilding, SmallBuilding, LargeBuilding]
-Building = Literal[
-    "city_hall",
-    "custom_house",
-    "fortress",
-    "guild_hall",
-    "residence",
-    "coffee_roaster",
-    "indigo_plant",
-    "small_indigo_plant",
-    "small_sugar_mill",
-    "sugar_mill",
-    "tobacco_storage",
-    "construction_hut",
-    "factory",
-    "hacienda",
-    "harbor",
-    "hospice",
-    "large_market",
-    "large_warehouse",
-    "office",
-    "small_market",
-    "small_warehouse",
-    "university",
-    "wharf",
-]
+
+## Constants
 
 ACTIONS: tuple[ActionType, ...] = (
     "builder",
@@ -135,14 +143,13 @@ ACTIONS: tuple[ActionType, ...] = (
     "craftsman",
     "governor",
     "mayor",
-    # "refuse",
     "role",
     "settler",
     "storage",
-    # "terminate",
     "tidyup",
     "trader",
 )
+
 GOODS: tuple[Good, ...] = (
     "corn",
     "indigo",
@@ -150,15 +157,67 @@ GOODS: tuple[Good, ...] = (
     "tobacco",
     "coffee",
 )
-LARGE_BUILDINGS: tuple[LargeBuilding, ...] = get_args(LargeBuilding)
-PROD_BUILDINGS: tuple[ProdBuilding, ...] = get_args(ProdBuilding)
-ROLES: tuple[Role, ...] = get_args(Role)
-SMALL_BUILDINGS: tuple[SmallBuilding, ...] = get_args(SmallBuilding)
-TILES: tuple[Tile, ...] = get_args(Tile)
+
+LARGE_BUILDINGS: tuple[LargeBuilding, ...] = (
+    "city_hall",
+    "custom_house",
+    "fortress",
+    "guild_hall",
+    "residence",
+)
+
+PROD_BUILDINGS: tuple[ProdBuilding, ...] = (
+    "coffee_roaster",
+    "indigo_plant",
+    "small_indigo_plant",
+    "small_sugar_mill",
+    "sugar_mill",
+    "tobacco_storage",
+)
+
+ROLES: tuple[Role, ...] = (
+    "builder",
+    "captain",
+    "craftsman",
+    "mayor",
+    "settler",
+    "trader",
+    "prospector",
+    "second_prospector",
+)
+
+SMALL_BUILDINGS: tuple[SmallBuilding, ...] = (
+    "construction_hut",
+    "factory",
+    "hacienda",
+    "harbor",
+    "hospice",
+    "large_market",
+    "large_warehouse",
+    "office",
+    "small_market",
+    "small_warehouse",
+    "university",
+    "wharf",
+)
+
+TILES: tuple[Tile, ...] = (
+    "coffee_tile",
+    "corn_tile",
+    "indigo_tile",
+    "quarry_tile",
+    "sugar_tile",
+    "tobacco_tile",
+)
 
 COUNTABLES = GOODS + ("money", "people", "points")
+
 NONPROD_BUILDINGS: tuple[Building, ...] = SMALL_BUILDINGS + LARGE_BUILDINGS
+
 BUILDINGS: tuple[Building, ...] = PROD_BUILDINGS + NONPROD_BUILDINGS
+
+
+## Additional information
 
 BUILD_INFO: dict[Building, dict[str, int]] = {
     "city_hall": {"tier": 4, "cost": 10, "space": 1, "initial": 1},

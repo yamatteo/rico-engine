@@ -39,11 +39,11 @@ def many_games(bots, N, m):
 
 
 if __name__ == "__main__":
-    N = 500
-    M = 10
+    N = 100
+    M = 5
     bots = {
-        "Ad": Quentin("Ad"),
-        "Be": Quentin("Be"),
+        "Ad": Quentin("Ad", use_delta=True, alpha=1e-3, epsilon=0.01),
+        "Be": Quentin("Be", alpha=1e-3),
         "Ca": Quentin("Ca"),
         "Da": Rufus("Da"),
     }
@@ -54,7 +54,6 @@ if __name__ == "__main__":
         for name in usernames:
             cumulative_scores[name] += scores[name]
     print(f"SESSION is OVER.")
-    for name, score in cumulative_scores.items():
-        print(f" {name} > {score/(M*N):.3f} points")
+    print({ action_type: egb.expected_rewards for action_type, egb in bots["Ad"].parts.items() })
 
 

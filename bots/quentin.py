@@ -1,8 +1,4 @@
-import random
-from typing import Optional, Sequence
-
 from .. import *
-from .upper_confidence_bound import UpperConfidenceBound
 from .epsilon_greedy_bandit import EpsilonGreedyBandit
 
 
@@ -40,10 +36,23 @@ def project_action(action: Action) -> tuple:
 class Quentin:
     """A bot that take decisions based on reinforcement learning."""
 
-    def __init__(self, name: str):
+    def __init__(
+        self,
+        name: str,
+        use_delta: bool = False,
+        alpha: float = 1e-2,
+        epsilon: float = 0.1,
+    ):
         self.name = name
         self.parts = {
-            action_type: EpsilonGreedyBandit(name=name, projection=project_action, init_value=5.0)
+            action_type: EpsilonGreedyBandit(
+                name=name,
+                projection=project_action,
+                init_value=4.0 if use_delta else 8.0,
+                alpha=alpha,
+                epsilon=epsilon,
+                use_delta=use_delta,
+            )
             for action_type in ACTIONS
         }
 
@@ -60,3 +69,7 @@ class Quentin:
         ), "Game is not over!"
         for part in self.parts.values():
             part.terminate(game)
+    
+    def load_rewards(self, rewards: dict[Action, dict[tuple, float]]):
+        for action_type, expected_rewards in rewards.items():
+            self.parts[action_type].expected_rewards.update(expected_rewards)

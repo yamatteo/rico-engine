@@ -12,7 +12,6 @@ class EpsilonGreedyBandit:
         alpha: float = 0.01,
         epsilon: float = 0.1,
         init_value: float = 0,
-        train: bool = True,
         use_delta: bool = False,
     ):
         self.name = name  # Name of the player
@@ -22,7 +21,7 @@ class EpsilonGreedyBandit:
             epsilon  # probability to take random action, to allow exploration
         )
         self.init_value = init_value
-        self.train = train  # Whether to update estimated values
+        self.train = (epsilon > 0)  # Whether to update estimated values
         self.use_delta = use_delta  # Whether to use points or point deltas as value
 
         # Short term memory

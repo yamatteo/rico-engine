@@ -70,7 +70,7 @@ class Town(Holder):
     #     return data
 
 
-    def asdict_simple(self) -> dict:
+    def asdict_integers(self) -> dict[str, int]:
         data = dict()
 
         data["is_governor"] = int(self.gov)
@@ -80,10 +80,7 @@ class Town(Holder):
         data["money"] = self.money
         data["points"] = self.points
         data["people"] = self.people
-
-        for role in ROLES:
-            data[role] = int(self.role == role)
-
+        data["role"] = (1+ROLES.index(self.role) if self.role else 0)
         for good in GOODS:
             data[good] = self.count(good)
 

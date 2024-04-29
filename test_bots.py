@@ -41,8 +41,8 @@ if __name__ == "__main__":
     M = 10
     P = 1000
     bots = {
-        "Ad": Pablo("Ad", alpha=0.01, epsilon=1, state_space_dim=1, action_space_dim=1024),
-        "Be": Rufus("Be"),
+        "Ad": Pablo("Ad", alpha=0.01, epsilon=0.1, state_space_dim=1, action_space_dim=1024),
+        "Be": Quentin("Be"),
         "Ca": Rufus("Ca"),
         "Da": Rufus("Da"),
     }
@@ -71,9 +71,9 @@ if __name__ == "__main__":
                 print(f"   {name} > {score/P:.3f} points")
             print()
             cumulative_scores = {name: 0 for name in usernames}
-            old_bot = bots["Ad"]
-            bots["Ad"] = Pablo("Ad", alpha=0.01, epsilon=max(0.1, 1-0.1*i), state_space_dim=2 ** i, action_space_dim=1024)
-            bots["Ad"].learn_from(old_bot)
+            # old_bot = bots["Ad"]
+            # bots["Ad"] = Pablo("Ad", alpha=0.01, epsilon=max(0.1, 1-0.1*i), state_space_dim=2 ** i, action_space_dim=1024)
+            # bots["Ad"].learn_from(old_bot)
 
     print(f"SESSION is OVER.")
 

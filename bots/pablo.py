@@ -29,7 +29,7 @@ class Pablo:
 
         self.alpha = alpha
         self.epsilon = epsilon
-        self.gamma = 0.99
+        # self.gamma = 0.99
 
     def decide(self, game: Game) -> Action:
         """Given the current game state, decides what action to take."""
@@ -40,7 +40,7 @@ class Pablo:
 
         state_hash = self.hash_state(game)
 
-        choices: Sequence[Action] = expected.possibilities(board, cap=20)
+        choices: Sequence[Action] = expected.possibilities(board, cap=40)
 
         def eval_action(action: Action) -> float:
             return self.sah_values.get((state_hash, self.hash_action(action)), 0)
@@ -51,7 +51,7 @@ class Pablo:
         else:
             action = max(choices, key=eval_action)
 
-        self.update(game, state_hash, self.hash_action(action))
+        self.episode.append((state_hash, self.hash_action(action), game.board.towns[self.name].tally()))
 
         return action
     
@@ -115,16 +115,12 @@ class Pablo:
         assert (
             game.expected.type == "governor" and game.board.endgame_reason is not None
         ), "Game is not over!"
-        self.update(game)
+        # self.update(game)
 
-        total_return = 0
+        # total_return = 0
+        final_value = game.board.towns[self.name].tally()
 
-        new_returns = dict()
-        for state, action, reward in reversed(self.episode):
-            total_return = self.gamma * total_return + reward
-            new_returns[(state, action)] = total_return
-
-        for (state, action), discounted_return in new_returns.items():
+        for state, action, town_value in self.episode:
             prev_value = self.sah_values.get((state, action), 0)
             counter = self.sah_counts.get((state, action), 0) + 1
 
@@ -132,31 +128,50 @@ class Pablo:
             if self.alpha is not None:
                 alpha = max(alpha, self.alpha)
 
-            self.sah_values[(state, action)] = prev_value + alpha * (discounted_return - prev_value)
+            self.sah_values[(state, action)] = prev_value + alpha * ((final_value - town_value) - prev_value)
             self.sah_counts[(state, action)] = counter
+
+
+        # new_returns = dict()
+        # for state, action, reward in reversed(self.episode):
+        #     total_return = self.gamma * total_return + reward
+        #     new_returns[(state, action)] = total_return
+
+        # for (state, action), discounted_return in new_returns.items():
+        #     prev_value = self.sah_values.get((state, action), 0)
+        #     counter = self.sah_counts.get((state, action), 0) + 1
+
+        #     alpha = 1 / counter
+        #     if self.alpha is not None:
+        #         alpha = max(alpha, self.alpha)
+
+        #     self.sah_values[(state, action)] = prev_value + alpha * (discounted_return - prev_value)
+        #     self.sah_counts[(state, action)] = counter
 
         self.episode = list()
 
-    def update(
-        self, game: Game, state: Optional[int] = None, action: Optional[int] = None
-    ):
-        current_value = game.board.towns[self.name].tally()
-        reward = current_value - self.value_memory
+    # def update(
+    #     self, game: Game, state: Optional[int] = None, action: Optional[int] = None
+    # ):
+    #     self.episode.append((state, action, game.board.towns[self.name].tally()))
+    #     current_value = game.board.towns[self.name].tally()
+    #     reward = current_value - self.value_memory
 
-        if self.state_memory is not None and self.action_memory is not None:
-            self.episode.append((self.state_memory, self.action_memory, reward))
+    #     if self.state_memory is not None and self.action_memory is not None:
+    #         self.episode.append((self.state_memory, self.action_memory, self.value_memory))
+    #         # self.episode.append((self.state_memory, self.action_memory, reward))
 
-        self.value_memory = current_value if (state is not None and action is not None) else 0
-        self.state_memory = state
-        self.action_memory = action
+    #     self.value_memory = game.board.towns[self.name].tally() if (state is not None and action is not None) else 0
+    #     self.state_memory = state
+    #     self.action_memory = action
     
-    def learn_from(self, other: "Pablo"):
-        quotient = 1 + int(max(1, self.state_space_dim / other.state_space_dim) * max(1, self.action_space_dim / other.action_space_dim))
-        for i in range(self.state_space_dim):
-            other_i = i % other.state_space_dim
-            for j in range(self.action_space_dim):
-                other_j = j % other.action_space_dim
-                if (other_i, other_j) in other.sah_values:
-                    self.sah_values[(i, j)] = other.sah_values[(other_i, other_j)]
-                    self.sah_counts[(i, j)] = other.sah_counts[(other_i, other_j)] // quotient
+    # def learn_from(self, other: "Pablo"):
+    #     quotient = 1 + int(max(1, self.state_space_dim / other.state_space_dim) * max(1, self.action_space_dim / other.action_space_dim))
+    #     for i in range(self.state_space_dim):
+    #         other_i = i % other.state_space_dim
+    #         for j in range(self.action_space_dim):
+    #             other_j = j % other.action_space_dim
+    #             if (other_i, other_j) in other.sah_values:
+    #                 self.sah_values[(i, j)] = other.sah_values[(other_i, other_j)]
+    #                 self.sah_counts[(i, j)] = other.sah_counts[(other_i, other_j)] // quotient
 

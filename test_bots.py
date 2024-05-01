@@ -39,9 +39,9 @@ def many_games(bots, N, m):
 if __name__ == "__main__":
     N = 10000
     M = 10
-    P = 1000
+    P = 100
     bots = {
-        "Ad": Pablo("Ad", alpha=0.01, epsilon=0.1, state_space_dim=1, action_space_dim=1024),
+        "Ad": Pablo("Ad", alpha=0.01, epsilon=0.1, state_space_dim=1, action_space_dim=1024, reward_window=20),
         "Be": Quentin("Be"),
         "Ca": Rufus("Ca"),
         "Da": Rufus("Da"),

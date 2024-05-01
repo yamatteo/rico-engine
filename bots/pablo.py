@@ -12,14 +12,16 @@ class Pablo:
         # use_delta: bool = False,
         alpha: Optional[float] = None,
         epsilon: float = 0.1,
-        state_space_dim = 16,
         action_space_dim = 16,
+        reward_window = 1,
+        state_space_dim = 16,
     ):
         self.name = name
         self.episode = []
         self.value_memory = 0
-        self.state_memory = None
         self.action_memory = None
+        self.reward_window = reward_window
+        self.state_memory = None
 
         self.sah_values: dict[tuple[int, int], float] = dict()
         self.sah_counts: dict[tuple[int, int], int] = dict()
@@ -120,15 +122,19 @@ class Pablo:
         # total_return = 0
         final_value = game.board.towns[self.name].tally()
 
-        for state, action, town_value in self.episode:
+        for i, (state, action, town_value) in enumerate(self.episode):
             prev_value = self.sah_values.get((state, action), 0)
             counter = self.sah_counts.get((state, action), 0) + 1
+            try:
+                reward = self.episode[i+self.reward_window][2] - town_value
+            except IndexError:
+                reward = final_value - town_value
 
             alpha = 1 / counter
             if self.alpha is not None:
                 alpha = max(alpha, self.alpha)
 
-            self.sah_values[(state, action)] = prev_value + alpha * ((final_value - town_value) - prev_value)
+            self.sah_values[(state, action)] = prev_value + alpha * (reward - prev_value)
             self.sah_counts[(state, action)] = counter
 
 

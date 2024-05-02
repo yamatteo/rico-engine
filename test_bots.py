@@ -1,6 +1,7 @@
 from rich import print
 
 from .game import Game, GameOver
+from .bots.oscar import Oscar
 from .bots.pablo import Pablo
 from .bots.quentin import Quentin
 from .bots.rufus import Rufus
@@ -41,8 +42,8 @@ if __name__ == "__main__":
     M = 10
     P = 100
     bots = {
-        "Ad": Pablo("Ad", alpha=0.01, epsilon=0.1, state_space_dim=1, action_space_dim=1024, reward_window=20),
-        "Be": Quentin("Be"),
+        "Ad": Oscar("Ad", use_upper_confidence=True),
+        "Be": Rufus("Be"),
         "Ca": Rufus("Ca"),
         "Da": Rufus("Da"),
     }

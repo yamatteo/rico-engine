@@ -162,6 +162,7 @@ class RoleAction(Action):
             if board.count("money") <= 0:
                 board.endgame_reason = "money"
                 # extra = [TerminateAction(name=action.name, reason="No more money.")]
+            town.spent_role = True
 
         return board, extra
 

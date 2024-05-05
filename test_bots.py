@@ -1,6 +1,7 @@
 from rich import print
 
 from .game import Game, GameOver
+from .bots.nadal import Nadal
 from .bots.oscar import Oscar
 from .bots.pablo import Pablo
 from .bots.quentin import Quentin
@@ -38,12 +39,12 @@ def many_games(bots, N, m):
 
 
 if __name__ == "__main__":
-    N = 10000
+    N = 5000
     M = 10
-    P = 100
+    P = 10
     bots = {
-        "Ad": Oscar("Ad", use_upper_confidence=True),
-        "Be": Rufus("Be"),
+        "Ad": Nadal("Ad"),
+        "Be": Quentin("Be"),
         "Ca": Rufus("Ca"),
         "Da": Rufus("Da"),
     }
@@ -56,7 +57,8 @@ if __name__ == "__main__":
 
         for name in usernames:
             cumulative_scores[name] += scores[name]
-
+        
+        print(f" ROUND {n+1}:", len(bots["Ad"].state_returns), "values")
         # # Single score accumulation
         # if (n+1)%P == 0:
         #     print(f" ROUND {n+1}:")
@@ -68,6 +70,7 @@ if __name__ == "__main__":
         if (n+1)%P == 0:
             i += 1
             print(f" ROUND {n+1}:")
+            print("            ", len(bots["Ad"].state_returns), "values")
             for name, score in cumulative_scores.items():
                 print(f"   {name} > {score/P:.3f} points")
             print()
@@ -77,4 +80,7 @@ if __name__ == "__main__":
             # bots["Ad"].learn_from(old_bot)
 
     print(f"SESSION is OVER.")
+    for action, est in bots["Ad"].action_rewards.items():
+        if action.startswith("B"):
+            print(action, f"{float(est):.3f}")
 

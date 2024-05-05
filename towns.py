@@ -69,7 +69,6 @@ class Town(Holder):
 
     #     return data
 
-
     def asdict_integers(self) -> dict[str, int]:
         data = dict()
 
@@ -80,7 +79,7 @@ class Town(Holder):
         data["money"] = self.money
         data["points"] = self.points
         data["people"] = self.people
-        data["role"] = (1+ROLES.index(self.role) if self.role else 0)
+        data["role"] = 1 + ROLES.index(self.role) if self.role else 0
         for good in GOODS:
             data[good] = self.count(good)
 
@@ -91,6 +90,40 @@ class Town(Holder):
         for building, info in self.buildings.items():
             data[f"placed_{building}"] = info.placed
             data[f"worked_{building}"] = info.worked
+
+        return data
+
+    def asdict_strings(self) -> dict[str, int]:
+        data = dict()
+
+        data["is_governor"] = str(int(self.gov))
+        data["spent_role"] = str(int(self.spent_role))
+        data["spent_wharf"] = str(int(self.spent_wharf))
+
+        data["money"] = f"{self.money:02}"
+        data["points"] = f"{self.points:02}"
+        data["people"] = str(self.people)
+        data["role"] = {
+            None: "0",
+            "builder": "B",
+            "captain": "C",
+            "craftsman": "F",
+            "mayor": "M",
+            "settler": "S",
+            "trader": "T",
+            "prospector": "P",
+            "second_prospector": "P",
+        }[self.role]
+        for good in GOODS:
+            data[good] = str(self.count(good))
+
+        for tile, info in self.tiles.items():
+            data[f"placed_{tile}"] = f"{info.placed:X}"
+            data[f"worked_{tile}"] = f"{info.worked:X}"
+
+        for building, info in self.buildings.items():
+            data[f"placed_{building}"] = str(info.placed)
+            data[f"worked_{building}"] = str(info.worked)
 
         return data
 

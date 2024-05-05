@@ -126,12 +126,12 @@ SmallBuilding = Literal[
 ]
 
 Tile = Literal[
-    "coffee_tile",
     "corn_tile",
     "indigo_tile",
-    "quarry_tile",
     "sugar_tile",
     "tobacco_tile",
+    "coffee_tile",
+    "quarry_tile",
 ]
 
 
@@ -159,20 +159,20 @@ GOODS: tuple[Good, ...] = (
 )
 
 LARGE_BUILDINGS: tuple[LargeBuilding, ...] = (
-    "city_hall",
-    "custom_house",
-    "fortress",
     "guild_hall",
     "residence",
+    "fortress",
+    "custom_house",
+    "city_hall",
 )
 
 PROD_BUILDINGS: tuple[ProdBuilding, ...] = (
-    "coffee_roaster",
-    "indigo_plant",
     "small_indigo_plant",
     "small_sugar_mill",
+    "indigo_plant",
     "sugar_mill",
     "tobacco_storage",
+    "coffee_roaster",
 )
 
 ROLES: tuple[Role, ...] = (
@@ -187,27 +187,27 @@ ROLES: tuple[Role, ...] = (
 )
 
 SMALL_BUILDINGS: tuple[SmallBuilding, ...] = (
-    "construction_hut",
-    "factory",
+    "small_market",
     "hacienda",
-    "harbor",
+    "construction_hut",
+    "small_warehouse",
     "hospice",
+    "office",
     "large_market",
     "large_warehouse",
-    "office",
-    "small_market",
-    "small_warehouse",
+    "factory",
     "university",
+    "harbor",
     "wharf",
 )
 
 TILES: tuple[Tile, ...] = (
-    "coffee_tile",
     "corn_tile",
     "indigo_tile",
-    "quarry_tile",
     "sugar_tile",
     "tobacco_tile",
+    "coffee_tile",
+    "quarry_tile",
 )
 
 COUNTABLES = GOODS + ("money", "people", "points")

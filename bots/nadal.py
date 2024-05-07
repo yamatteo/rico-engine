@@ -21,6 +21,7 @@ def project_state(game: Game, *, wrt: str) -> str:
     )
     return data
 
+
 class Nadal:
     """A bot that take decisions based on reinforcement learning, with some variation of planning."""
 
@@ -30,12 +31,14 @@ class Nadal:
         max_counter=100,
         target_policy=("epsilon", 0.01),
         behavior_policy=("epsilon", 0.1),
+        sweeping=None,
     ):
         self.name = name
+        self.sweeping = sweeping
 
-        self.state_returns = dict()
-        # self.episode = []
-        # self.value_memory = 0
+        self.state_returns = {None: Estimator(max_counter=max_counter)}
+        self.episode = []
+        self.value_memory = 0
         # self.role_memory = None
         # self.round_times = [0]
 
@@ -67,26 +70,29 @@ class Nadal:
         state = project_state(game, wrt=self.name)
 
         choices = expected.possibilities(board, cap=30)
-        future_games = [ game.project(act) for act in choices ]
+        future_games = [game.project(act) for act in choices]
         states, values = [], []
         for future_game in future_games:
             future_state = project_state(future_game, wrt=self.name)
             try:
                 future_value = float(self.state_returns[future_state])
             except KeyError:
-                self.state_returns[future_state] = Estimator(value=future_game.board.towns[self.name].tally(), max_counter=self.max_counter)
+                self.state_returns[future_state] = Estimator(
+                    value=future_game.board.towns[self.name].tally(),
+                    max_counter=self.max_counter,
+                )
                 future_value = float(self.state_returns[future_state])
             states.append(future_state)
             values.append(future_value)
-        
+
         updated_value = max(values)
         try:
             self.state_returns[state].put(updated_value)
         except KeyError:
-            self.state_returns[state] = Estimator(value=updated_value, max_counter=self.max_counter)
-        
+            self.state_returns[state] = Estimator(
+                value=updated_value, max_counter=self.max_counter
+            )
 
-        
         # for act in choices.keys():
         #     if (state, act) not in self.state_action_values:
         #         self.state_action_values[(state, act)] = Estimator(
@@ -100,23 +106,13 @@ class Nadal:
 
         # selected_action, b_policy_weights = self.behavior_policy(state, list(choices.keys()))
         # _, t_policy_weights = self.target_policy(state, list(choices.keys()))
-        # current_value = game.board.towns[self.name].tally()
+        current_value = game.board.towns[self.name].tally()
 
-        index, state = self.behavior_policy(states, values)
+        index, b_policy_weights = self.behavior_policy(states, values)
 
         # action_projections[selected_action[0]] = action_projections.get(selected_action[0], set()) | {selected_action}
 
-        # self.episode.append(
-        #     dict(
-        #         reward=current_value - self.value_memory,
-        #         state=state,
-        #         actions=list(choices.keys()),
-        #         b_policy_weights=b_policy_weights,
-        #         t_policy_weights=t_policy_weights,
-        #         selected_action=selected_action,
-        #     )
-        # )
-        # self.value_memory = current_value
+        self.remember_step(current_value, state=state, b_policy_weights=b_policy_weights)
 
         return choices[index]
 
@@ -131,7 +127,7 @@ class Nadal:
     #             stop_action = self.episode[tau + n + 1]["selected_action"]
     #             G += float(self.state_action_values[(stop_state, stop_action)])
     #         self.state_action_values[(start_state, start_action)].put(G)
-    
+
     # def update_with_rounds(self):
     #     ep = self.episode
     #     episode_return = self.value_memory
@@ -159,12 +155,35 @@ class Nadal:
     #         self.round_times.append(len(self.episode))
     #     self.role_memory = town.role
 
+    def remember_step(self, current_value, *, state=None, b_policy_weights=None):
+        self.episode.append(
+            dict(
+                reward=current_value - self.value_memory,
+                state=state,
+                # possible_states = states,
+                # actions=list(choices.keys()),
+                b_policy_weights=b_policy_weights,
+                # t_policy_weights=t_policy_weights,
+                # selected_action=selected_action,
+            )
+        )
+        self.value_memory = current_value
+
     def terminate(self, game: Game):
         """Things to do when the game ends."""
         assert (
             game.expected.type == "governor" and game.board.endgame_reason is not None
         ), "Game is not over!"
 
+        self.remember_step(game.board.towns[self.name].tally())
+
+        if self.sweeping == "episode":
+            current_value = game.board.towns[self.name].tally()
+            for step in self.episode:
+                state = step["state"]
+                self.state_returns[state].put(current_value)
+
+        return
         # current_value = game.board.towns[self.name].tally()
         # self.round_times.append(len(self.episode))
         # self.episode.append(
@@ -223,9 +242,9 @@ class Nadal:
         # self.episode = list()
 
     def epsilon_policy(self, states: list[str], values: list[float], *, epsilon: float):
+        i = max(range(len(states)), key=lambda i: values[i] + 0.01 * random.random())
+        weights = [1 if values[j] >= values[i] else 0 for j in range(len(states))]
+        weights = [epsilon / len(states) + w / sum(weights) for w in weights]
         if random.random() < epsilon:
-            return random.choice(list(enumerate(states)))
-        i = max(
-            range(len(states)), key=lambda i: values[i] + 0.01*random.random()
-        )
-        return i, states[i]
+            return random.randint(0, len(states) - 1), weights
+        return i, weights

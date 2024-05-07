@@ -1,4 +1,5 @@
 from rich import print
+from statistics import mean, stdev
 
 from .game import Game, GameOver
 from .bots.nadal import Nadal
@@ -41,11 +42,11 @@ def many_games(bots, N, m):
 if __name__ == "__main__":
     N = 5000
     M = 10
-    P = 10
+    P = 1
     bots = {
-        "Ad": Nadal("Ad"),
-        "Be": Quentin("Be"),
-        "Ca": Rufus("Ca"),
+        "Ad": Nadal("Ad", sweeping="episode"),
+        "Be": Nadal("Be"),
+        "Ca": Quentin("Ca"),
         "Da": Rufus("Da"),
     }
 
@@ -71,10 +72,11 @@ if __name__ == "__main__":
             i += 1
             print(f" ROUND {n+1}:")
             print("            ", len(bots["Ad"].state_returns), "values")
+            print("            ", mean([float(est) for est in bots["Ad"].state_returns.values() if est.counter >= 1]))
             for name, score in cumulative_scores.items():
-                print(f"   {name} > {score/P:.3f} points")
+                print(f"   {name} > {score/(n+1):.3f} points")
             print()
-            cumulative_scores = {name: 0 for name in usernames}
+            # cumulative_scores = {name: 0 for name in usernames}
             # old_bot = bots["Ad"]
             # bots["Ad"] = Pablo("Ad", alpha=0.01, epsilon=max(0.1, 1-0.1*i), state_space_dim=2 ** i, action_space_dim=1024)
             # bots["Ad"].learn_from(old_bot)
